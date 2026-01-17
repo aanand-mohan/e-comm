@@ -12,6 +12,24 @@ export default function CartPage() {
 
     const fetchCart = async () => {
         try {
+            const userInfo = localStorage.getItem('userInfo');
+
+            if (!userInfo) {
+                // GUEST MODE: Fetch from LocalStorage
+                const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+                const validCart = guestCart.filter(item => item && item.product);
+                setCartItems(validCart);
+
+                const calcTotal = validCart.reduce((acc, item) => {
+                    const price = item.product?.price || 0;
+                    return acc + (price * item.quantity);
+                }, 0);
+                setTotal(calcTotal);
+                setLoading(false);
+                return;
+            }
+
+            // USER MODE: Fetch from API
             const { data } = await api.get('/api/cart');
             // Backend returns the cart array directly
             const items = Array.isArray(data) ? data : (data.items || []);
@@ -35,6 +53,23 @@ export default function CartPage() {
 
     const updateQuantity = async (itemId, newQty) => {
         if (newQty < 1) return;
+
+        const userInfo = localStorage.getItem('userInfo');
+        if (!userInfo) {
+            // GUEST MODE
+            const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+            const itemIndex = guestCart.findIndex(item => item.product._id === itemId);
+            if (itemIndex > -1) {
+                guestCart[itemIndex].quantity = newQty;
+                localStorage.setItem('guestCart', JSON.stringify(guestCart));
+                fetchCart(); // Refresh view
+                // Trigger context update if possible, or force reload/event
+                window.dispatchEvent(new Event('storage'));
+            }
+            return;
+        }
+
+        // USER MODE
         try {
             await api.put(`/api/cart/${itemId}`, { quantity: newQty }); // Adjust endpoint if needed
             fetchCart();
@@ -45,6 +80,19 @@ export default function CartPage() {
 
     const removeItem = async (itemId) => {
         if (!window.confirm('Remove this item?')) return;
+
+        const userInfo = localStorage.getItem('userInfo');
+        if (!userInfo) {
+            // GUEST MODE
+            const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+            const newCart = guestCart.filter(item => item.product._id !== itemId);
+            localStorage.setItem('guestCart', JSON.stringify(newCart));
+            fetchCart();
+            window.dispatchEvent(new Event('storage'));
+            return;
+        }
+
+        // USER MODE
         try {
             await api.delete(`/api/cart/${itemId}`);
             fetchCart();
