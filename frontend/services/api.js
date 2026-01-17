@@ -22,4 +22,22 @@ api.interceptors.request.use(
     }
 );
 
+// Response interceptor to handle 401 Token Expiry
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            // Token expired or invalid
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem('userInfo');
+                // Only redirect if not already on login page to avoid loops
+                if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login?error=session_expired';
+                }
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
