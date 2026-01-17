@@ -1,22 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import api from '@/services/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-
 import { useSearchParams } from 'next/navigation';
-
 import SupportChat from '@/components/SupportChat';
 
-export default function LoginPage() {
+function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [showSupport, setShowSupport] = useState(false);
 
-    // ... (router hooks)
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirect = searchParams.get('redirect') || '/';
@@ -30,7 +27,6 @@ export default function LoginPage() {
         try {
             const { data } = await api.post('/api/users/login', { email, password });
 
-            // ... (sync logic same as before)
             localStorage.setItem('userInfo', JSON.stringify(data));
             // SYNC GUEST CART
             try {
@@ -88,7 +84,7 @@ export default function LoginPage() {
                             {showSupport && (
                                 <button
                                     type="button"
-                                    onClick={() => setShowSupport(true)} // Actually it's just opening the modal
+                                    onClick={() => setShowSupport(true)}
                                     className="text-sm font-bold underline text-red-800 hover:text-red-900 text-left"
                                 >
                                     Contact Support for Activation
@@ -144,5 +140,13 @@ export default function LoginPage() {
                 />
             )}
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <LoginForm />
+        </Suspense>
     );
 }
