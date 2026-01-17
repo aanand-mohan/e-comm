@@ -16,8 +16,11 @@ export default function CartPage() {
             // Backend returns the cart array directly
             const items = Array.isArray(data) ? data : (data.items || []);
             setCartItems(items);
-            // Calculate total
-            const calcTotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+            // Calculate total safely
+            const calcTotal = items.reduce((acc, item) => {
+                const price = item.product?.price || 0;
+                return acc + (price * item.quantity);
+            }, 0);
             setTotal(calcTotal);
         } catch (error) {
             console.error('Failed to fetch cart:', error);

@@ -27,8 +27,19 @@ class CartServiceImpl {
         // We need to populate. Since Repo returns the Mongoose doc, we can chain populate or use a specific Repo method.
         // For consistency, let's assume we populate here or add findWithCart method in Repo.
         // Using mongoose method on doc for now:
-        await user.populate('cart.product', 'title price images');
-        return user.cart;
+        // Populate title, price, images, AND category
+        await user.populate('cart.product', 'title price images category');
+
+        // Filter out null products (in case product was deleted)
+        const validCart = user.cart.filter(item => item.product != null);
+
+        // Optional: Save if we found invalid items to clean up DB
+        if (validCart.length !== user.cart.length) {
+            user.cart = validCart;
+            await user.save();
+        }
+
+        return validCart;
     }
 
     async updateCartItem(userId, productId, quantity) {
