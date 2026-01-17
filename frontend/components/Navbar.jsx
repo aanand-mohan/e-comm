@@ -48,10 +48,10 @@ export default function Navbar() {
          </div>
 
          {/* STICKY CONTAINER FOR MAIN HEADER & NAV */}
-         <div className={`sticky top-0 z-50 transition-all duration-300 ${isSticky ? 'shadow-lg' : ''}`}>
+         <div className={`sticky top-0 z-50 transition-shadow duration-300 ease-in-out ${isSticky ? 'shadow-lg' : ''}`}>
 
             {/* 2. MAIN HEADER (Logo Left | Search Center | Icons Right) */}
-            <div className={`bg-white border-b border-gray-100 transition-all duration-300 ${isSticky ? 'py-2' : 'py-4 md:py-6'}`}>
+            <div className={`bg-white border-b border-gray-100 transition-[padding] duration-300 ease-in-out will-change-[padding] ${isSticky ? 'py-2' : 'py-4 md:py-6'}`}>
                <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
 
                   {/* LEFT: Logo & Name */}
