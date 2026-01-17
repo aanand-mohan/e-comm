@@ -42,6 +42,7 @@ export default function CategoryPage({ params }) {
 
     const displayTitle = slug.charAt(0).toUpperCase() + slug.slice(1);
     const isRudraksha = slug.toLowerCase() === 'rudraksha' || slug.toLowerCase().includes('rudraksha');
+    const isGemstones = slug.toLowerCase() === 'gemstones' || slug.toLowerCase().includes('gemstone');
 
     return (
         <main className="min-h-screen bg-white">
@@ -50,6 +51,17 @@ export default function CategoryPage({ params }) {
                     <img
                         src="/banners/rudraksha-banner-v2.png"
                         alt="Rudraksha Collection"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-widest drop-shadow-lg">{displayTitle}</h1>
+                    </div>
+                </div>
+            ) : isGemstones ? (
+                <div className="w-full h-[300px] md:h-[400px] relative mb-10 overflow-hidden">
+                    <img
+                        src="/banners/gemstones-banner.png"
+                        alt="Gemstones Collection"
                         className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
