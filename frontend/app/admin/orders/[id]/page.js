@@ -159,15 +159,19 @@ export default function OrderDetailsPage({ params }) {
                 <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 md:col-span-3">
                     <h2 className="text-xl font-semibold mb-4">Order Items</h2>
                     <div className="divide-y divide-gray-100">
-                        {order.orderItems.length === 0 ? <p>Order is empty</p> : (
+                        {(!order.orderItems || order.orderItems.length === 0) ? <p>Order is empty</p> : (
                             order.orderItems.map((item, index) => (
                                 <div key={index} className="py-4 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
-                                            {item.image && <img src={item.image} alt={item.title} className="h-full w-full object-cover" />}
+                                        <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                            {item.image ? (
+                                                <img src={item.image} alt={item.title || 'Product'} className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                                            )}
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">{item.title}</p>
+                                            <p className="font-medium text-gray-900">{item.title || 'Unknown Product'}</p>
                                             <p className="text-sm text-gray-500">{item.qty} x ₹{item.price} = ₹{item.qty * item.price}</p>
                                         </div>
                                     </div>
