@@ -61,7 +61,15 @@ class AuthServiceImpl {
         await UserRepository.save(user);
 
         // Send Email
-        const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+        let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+        // Auto-fix: If we are on production (Render) but CLIENT_URL is still localhost, force the Vercel URL
+        // This handles the case where the user forgot to update the env var on Render
+        if (clientUrl.includes('localhost') && (process.env.NODE_ENV === 'production' || process.env.ON_RENDER === 'true')) {
+            clientUrl = 'https://e-comm-2adg.vercel.app';
+        }
+
+        const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
         const message = `You are receiving this email because you (or someone else) has requested the reset of a password. \n\n Please make a PUT request to: \n ${resetUrl}`;
 
         try {
