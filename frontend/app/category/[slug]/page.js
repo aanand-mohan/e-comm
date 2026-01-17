@@ -68,6 +68,39 @@ export default function CategoryPage({ params }) {
                         <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-widest drop-shadow-lg">{displayTitle}</h1>
                     </div>
                 </div>
+            ) : slug.toLowerCase().includes('yantra') ? (
+                <div className="w-full h-[300px] md:h-[400px] relative mb-10 overflow-hidden">
+                    <img
+                        src="/banners/yantra-banner.png"
+                        alt="Yantra Collection"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-widest drop-shadow-lg">{displayTitle}</h1>
+                    </div>
+                </div>
+            ) : slug.toLowerCase().includes('parad') ? (
+                <div className="w-full h-[300px] md:h-[400px] relative mb-10 overflow-hidden">
+                    <img
+                        src="/banners/parad-banner.png"
+                        alt="Parad Collection"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-widest drop-shadow-lg">{displayTitle}</h1>
+                    </div>
+                </div>
+            ) : slug.toLowerCase().includes('sphatik') ? (
+                <div className="w-full h-[300px] md:h-[400px] relative mb-10 overflow-hidden">
+                    <img
+                        src="/banners/sphatik-banner.png"
+                        alt="Sphatik Collection"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <h1 className="text-4xl md:text-5xl font-bold text-white uppercase tracking-widest drop-shadow-lg">{displayTitle}</h1>
+                    </div>
+                </div>
             ) : (
                 <div className="bg-red-600 text-white py-12 mb-10">
                     <div className="container mx-auto px-4 text-center">
