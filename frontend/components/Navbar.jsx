@@ -48,15 +48,16 @@ export default function Navbar() {
          </div>
 
          {/* STICKY CONTAINER FOR MAIN HEADER & NAV */}
-         <div className={`sticky top-0 z-50 transition-shadow duration-300 ease-in-out ${isSticky ? 'shadow-lg' : ''}`}>
+         <div className={`sticky top-0 z-50 transition-shadow duration-300 ${isSticky ? 'shadow-md' : ''}`}>
 
             {/* 2. MAIN HEADER (Logo Left | Search Center | Icons Right) */}
-            <div className={`bg-white border-b border-gray-100 transition-[padding] duration-300 ease-in-out will-change-[padding] ${isSticky ? 'py-2' : 'py-4 md:py-6'}`}>
+            {/* FIX: Removed dynamic py-6 to py-2 transition. Kept constant py-3 for stable specific, non-glitchy scroll */}
+            <div className="bg-white border-b border-gray-100 py-3 md:py-4 transition-all duration-300">
                <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
 
                   {/* LEFT: Logo & Name */}
                   <div className="flex-shrink-0 w-full md:w-1/4 flex justify-center md:justify-start">
-                     <Link href="/" className={`font-bold text-red-600 tracking-tighter uppercase flex items-center gap-2 transition-all ${isSticky ? 'text-xl md:text-2xl' : 'text-2xl md:text-3xl'}`}>
+                     <Link href="/" className="font-bold text-red-600 tracking-tighter uppercase flex items-center gap-2 transition-all text-2xl md:text-3xl">
                         <span>🕉️</span>
                         <span>Rudra<span className="text-gray-800">Divine</span></span>
                      </Link>
@@ -68,10 +69,10 @@ export default function Navbar() {
                         <input
                            type="text"
                            placeholder="Search for Rudraksha, Gemstones, etc..."
-                           className={`w-full pl-6 pr-14 rounded-full border border-gray-300 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-1 focus:ring-red-500 transition-all shadow-sm ${isSticky ? 'py-2 text-sm' : 'py-3'}`}
+                           className="w-full pl-6 pr-14 rounded-full border border-gray-300 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-1 focus:ring-red-500 transition-all shadow-sm py-2"
                         />
-                        <button className={`absolute right-1 top-1 bottom-1 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors ${isSticky ? 'px-3' : 'px-5'}`}>
-                           <Search size={isSticky ? 16 : 20} />
+                        <button className="absolute right-1 top-1 bottom-1 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors px-4">
+                           <Search size={20} />
                         </button>
                      </div>
                   </div>
@@ -81,25 +82,25 @@ export default function Navbar() {
                      <div className="flex items-center gap-6">
                         <Link href="/wishlist" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors relative">
                            <div className="relative">
-                              <Heart size={isSticky ? 20 : 24} className="group-hover:scale-110 transition-transform" />
+                              <Heart size={24} className="group-hover:scale-110 transition-transform" />
                               {wishlistCount > 0 && (
                                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{wishlistCount}</span>
                               )}
                            </div>
-                           {!isSticky && <span className="text-xs mt-1 font-semibold">Wishlist</span>}
+                           <span className="text-xs mt-1 font-semibold">Wishlist</span>
                         </Link>
                         <Link href="/account" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors">
-                           <User size={isSticky ? 20 : 24} className="group-hover:scale-110 transition-transform" />
-                           {!isSticky && <span className="text-xs mt-1 font-semibold">Sign In</span>}
+                           <User size={24} className="group-hover:scale-110 transition-transform" />
+                           <span className="text-xs mt-1 font-semibold">Sign In</span>
                         </Link>
                         <Link href="/cart" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors relative">
                            <div className="relative">
-                              <ShoppingCart size={isSticky ? 20 : 24} className="group-hover:scale-110 transition-transform" />
+                              <ShoppingCart size={24} className="group-hover:scale-110 transition-transform" />
                               {cartCount > 0 && (
                                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{cartCount}</span>
                               )}
                            </div>
-                           {!isSticky && <span className="text-xs mt-1 font-semibold">Cart</span>}
+                           <span className="text-xs mt-1 font-semibold">Cart</span>
                         </Link>
                      </div>
                   </div>
