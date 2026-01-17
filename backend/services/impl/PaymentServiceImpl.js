@@ -43,12 +43,19 @@ class PaymentServiceImpl {
             quantity: item.quantity,
         }));
 
+        let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+
+        // Auto-fix: If we are on production (Render) but CLIENT_URL is still localhost, force the Vercel URL
+        if (clientUrl.includes('localhost') && (process.env.NODE_ENV === 'production' || process.env.ON_RENDER === 'true')) {
+            clientUrl = 'https://e-comm-2adg.vercel.app';
+        }
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items,
             mode: 'payment',
-            success_url: `${process.env.CLIENT_URL}/order-success/${orderId}?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.CLIENT_URL}/cart`,
+            success_url: `${clientUrl}/order-success/${orderId}?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${clientUrl}/cart`,
             metadata: {
                 orderId: orderId,
             },

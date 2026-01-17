@@ -86,10 +86,13 @@ class AuthServiceImpl {
             console.log(resetUrl);
             console.log('---------------------------------------------------------');
 
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpire = undefined;
-            await UserRepository.save(user);
-            throw new Error('Email could not be sent, but check server logs for link.');
+            // CRITICAL FIX: Do NOT clear the token on email failure
+            // user.resetPasswordToken = undefined;
+            // user.resetPasswordExpire = undefined;
+            // await UserRepository.save(user);
+
+            // Return success-like response so frontend doesn't show error to user
+            return { message: 'Email service issue, but Reset Token generated. Check Server Logs for link.' };
         }
     }
 
