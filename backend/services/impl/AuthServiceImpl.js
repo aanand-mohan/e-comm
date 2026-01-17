@@ -73,11 +73,15 @@ class AuthServiceImpl {
 
             return { message: 'Email sent', resetUrl }; // access to resetUrl only for dev
         } catch (error) {
-            console.error(error);
+            console.error('Email send failed:', error.message);
+            console.log('--- EMERGENCY RESET LINK (Check logs to access account) ---');
+            console.log(resetUrl);
+            console.log('---------------------------------------------------------');
+
             user.resetPasswordToken = undefined;
             user.resetPasswordExpire = undefined;
             await UserRepository.save(user);
-            throw new Error('Email could not be sent');
+            throw new Error('Email could not be sent, but check server logs for link.');
         }
     }
 
