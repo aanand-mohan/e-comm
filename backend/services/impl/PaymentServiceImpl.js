@@ -31,17 +31,40 @@ class PaymentServiceImpl {
             throw new Error('No items in cart');
         }
 
-        const line_items = cartItems.map((item) => ({
-            price_data: {
-                currency: 'inr',
-                product_data: {
-                    name: item.product.title,
-                    images: item.product.images && item.product.images.length > 0 ? [item.product.images[0]] : [],
+        let subTotal = 0;
+
+        const line_items = cartItems.map((item) => {
+            const itemTotal = item.product.price * item.quantity;
+            subTotal += itemTotal;
+
+            return {
+                price_data: {
+                    currency: 'inr',
+                    product_data: {
+                        name: item.product.title,
+                        images: item.product.images && item.product.images.length > 0 ? [item.product.images[0]] : [],
+                    },
+                    unit_amount: Math.round(item.product.price * 100),
                 },
-                unit_amount: Math.round(item.product.price * 100),
-            },
-            quantity: item.quantity,
-        }));
+                quantity: item.quantity,
+            };
+        });
+
+        // Add GST Line Item
+        const gstAmount = Math.round(subTotal * 0.18);
+        if (gstAmount > 0) {
+            line_items.push({
+                price_data: {
+                    currency: 'inr',
+                    product_data: {
+                        name: 'GST (18%)',
+                        description: 'Goods and Services Tax',
+                    },
+                    unit_amount: Math.round(gstAmount * 100), // GST in paisa
+                },
+                quantity: 1,
+            });
+        }
 
         let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 

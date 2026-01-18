@@ -1,8 +1,8 @@
 import ProductRepository from '../../repositories/ProductRepository.js';
 
 class ProductServiceImpl {
-    async getProducts(keyword) {
-        return await ProductRepository.findWithQuery(keyword);
+    async getProducts(keyword, category) {
+        return await ProductRepository.findWithQuery(keyword, category);
     }
 
     async getProductById(id) {

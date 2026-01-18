@@ -13,177 +13,236 @@ import {
    Grid
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import api from '@/services/api';
+
+import { useContent } from '@/hooks/useContent';
 
 export default function Navbar() {
    const [isSticky, setIsSticky] = useState(false);
    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+   const [categories, setCategories] = useState([]);
    const { cartCount, wishlistCount } = useCart();
+
+   // Fetch Navbar content
+   const { getContent, loading } = useContent('navbar');
 
    useEffect(() => {
       const handleScroll = () => {
-         setIsSticky(window.scrollY > 150);
+         setIsSticky(window.scrollY > 100);
       };
+
+      const fetchCategories = async () => {
+         try {
+            console.log('Fetching categories...');
+            const { data } = await api.get('/api/categories');
+            console.log('Categories fetched:', data);
+            setCategories(data);
+         } catch (error) {
+            console.error('Failed to fetch categories:', error);
+         }
+      };
+
+      fetchCategories();
       window.addEventListener('scroll', handleScroll);
       return () => window.removeEventListener('scroll', handleScroll);
    }, []);
 
    return (
       <>
-
-         {/* 1. TOP ANNOUNCEMENT BAR */}
-         <div className="w-full bg-red-600 text-white text-xs md:text-sm py-1 px-4 flex justify-between items-center transition-all duration-300">
-            <div className="hidden md:flex gap-4">
-               <span>Welcome to Rudra Divine</span>
-               <span>|</span>
-               <span>Diwali Sale is Live!</span>
-            </div>
-            <div className="w-full md:w-auto overflow-hidden">
-               <p className="animate-pulse text-center font-semibold">
-                  Use Code: DIVINE20 for 20% OFF
-               </p>
-            </div>
-            <div className="hidden md:flex gap-4">
-               <span>Call Us: +91-99999*****</span>
+         {/* 1. TOP ANNOUNCEMENT BAR - Sacred Dark & Gold */}
+         <div className="bg-black text-gray-400 text-[10px] md:text-xs py-2 border-b border-white/5 tracking-wider font-serif">
+            <div className="container mx-auto px-4 max-w-7xl flex justify-between items-center">
+               <div className="hidden md:flex gap-6">
+                  <span className="text-primary/80">{!loading && getContent('navbar_announcement_left', 'Awaken Your Inner Energy')}</span>
+                  <span>{!loading && getContent('navbar_announcement_right', 'Authentic Vedic Tools')}</span>
+               </div>
+               <div className="w-full md:w-auto text-center">
+                  <span className="font-medium text-gray-300">
+                     {!loading && getContent('navbar_promo', 'Start Your Sacred Journey • Free Shipping on Orders over ₹999')}
+                  </span>
+               </div>
+               <div className="hidden md:flex gap-6">
+                  <span>Blessings: {!loading && getContent('navbar_phone', '+91-99999*****')}</span>
+               </div>
             </div>
          </div>
 
-         {/* STICKY CONTAINER FOR MAIN HEADER & NAV */}
-         <div className={`sticky top-0 z-50 transition-shadow duration-300 ${isSticky ? 'shadow-md' : ''}`}>
+         {/* 2. STICKY HEADER CONTAINER */}
+         <header className={`sticky top-0 z-50 transition-all duration-300 ${isSticky ? 'bg-black/90 backdrop-blur-md shadow-2xl border-b border-white/10' : 'bg-transparent border-b border-white/5'}`}>
 
-            {/* 2. MAIN HEADER (Logo Left | Search Center | Icons Right) */}
-            {/* FIX: Removed dynamic py-6 to py-2 transition. Kept constant py-3 for stable specific, non-glitchy scroll */}
-            <div className="bg-white border-b border-gray-100 py-3 md:py-4 transition-all duration-300">
-               <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            {/* MAIN HEADER: Logo | Search | Actions */}
+            <div className="container mx-auto px-4 max-w-7xl">
+               <div className="flex justify-between items-center py-4 md:py-6 gap-4 md:gap-8">
 
-                  {/* LEFT: Logo & Name */}
-                  <div className="flex-shrink-0 w-full md:w-1/4 flex justify-center md:justify-start">
-                     <Link href="/" className="font-bold text-red-600 tracking-tighter uppercase flex items-center gap-2 transition-all text-2xl md:text-3xl">
-                        <span>🕉️</span>
-                        <span>Rudra<span className="text-gray-800">Divine</span></span>
+                  {/* LEFT: Mobile Menu & Logo */}
+                  <div className="flex items-center gap-3 md:gap-0">
+                     <button onClick={() => setMobileMenuOpen(true)} className="md:hidden p-2 -ml-2 text-white hover:text-primary transition-colors">
+                        <Menu size={24} />
+                     </button>
+
+                     <Link href="/" className="flex items-center gap-3 group">
+                        <span className="text-2xl md:text-3xl filter drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">🕉️</span>
+                        <div className="flex flex-col leading-none">
+                           <span className="font-serif font-bold text-white text-xl md:text-2xl tracking-wide uppercase group-hover:text-primary transition-colors duration-300">
+                              {!loading && getContent('navbar_logo_text', 'Rudra')}
+                              {/* If you want "Divine" to be colored, we might need a richer text editor or just stick to simple text for now. 
+                                  For now, let's assume the CMS sends the full string. I'll split it or just render as is. 
+                                  Let's just render it fully. The user can type "RUDRA DIVINE"
+                                  Wait, the design has "Rudra" in white and "Divine" in primary color.
+                                  To keep it editable but maintain design, I probably need two fields or HTML support.
+                                  Let's stick to simple text for MVP control. 
+                               */}
+                              {!loading ? getContent('navbar_logo_text', 'RudraDivine') : 'RudraDivine'}
+                           </span>
+                           <span className="text-[8px] md:text-[9px] text-gray-400 tracking-[0.3em] font-medium uppercase mt-1">
+                              {!loading && getContent('navbar_subtitle', 'Spiritual Store')}
+                           </span>
+                        </div>
                      </Link>
                   </div>
 
-                  {/* CENTER: Search Bar */}
-                  <div className="w-full md:w-2/4 flex justify-center">
-                     <div className="relative w-full max-w-2xl">
+                  {/* CENTER: Premium Modern Search Bar (Desktop) */}
+                  <div className="hidden md:flex flex-1 max-w-xl mx-auto px-6">
+                     <div className="relative w-full group">
                         <input
                            type="text"
-                           placeholder="Search for Rudraksha, Gemstones, etc..."
-                           className="w-full pl-6 pr-14 rounded-full border border-gray-300 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:bg-white focus:ring-1 focus:ring-red-500 transition-all shadow-sm py-2"
+                           placeholder="Search for peace, rudraksha, yantras..."
+                           className="w-full pl-5 pr-14 py-3 rounded-full border border-white/10 bg-white/5 text-sm text-white placeholder-gray-500 outline-none focus:border-primary/50 focus:bg-black focus:ring-1 focus:ring-primary/30 transition-all shadow-inner group-hover:border-white/20"
                         />
-                        <button className="absolute right-1 top-1 bottom-1 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors px-4">
-                           <Search size={20} />
+                        <button className="absolute right-1.5 top-1.5 bottom-1.5 bg-primary/20 hover:bg-primary text-primary hover:text-black rounded-full px-5 flex items-center justify-center transition-all duration-300 active:scale-95 border border-primary/20">
+                           <Search size={18} />
                         </button>
                      </div>
                   </div>
 
-                  {/* RIGHT: Icons List */}
-                  <div className="w-full md:w-1/4 hidden md:flex justify-end items-center gap-6 lg:gap-8">
-                     <div className="flex items-center gap-6">
-                        <Link href="/wishlist" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors relative">
-                           <div className="relative">
-                              <Heart size={24} className="group-hover:scale-110 transition-transform" />
-                              {wishlistCount > 0 && (
-                                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{wishlistCount}</span>
-                              )}
-                           </div>
-                           <span className="text-xs mt-1 font-semibold">Wishlist</span>
-                        </Link>
-                        <Link href="/account" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors">
-                           <User size={24} className="group-hover:scale-110 transition-transform" />
-                           <span className="text-xs mt-1 font-semibold">Sign In</span>
-                        </Link>
-                        <Link href="/cart" className="group flex flex-col items-center text-gray-700 hover:text-red-600 transition-colors relative">
-                           <div className="relative">
-                              <ShoppingCart size={24} className="group-hover:scale-110 transition-transform" />
-                              {cartCount > 0 && (
-                                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">{cartCount}</span>
-                              )}
-                           </div>
-                           <span className="text-xs mt-1 font-semibold">Cart</span>
-                        </Link>
-                     </div>
-                  </div>
-               </div>
-            </div>
+                  {/* RIGHT: Actions */}
+                  <div className="flex items-center gap-2 md:gap-8">
+                     <Link href="/" className="hidden md:hidden"> {/* Placeholder */}</Link>
 
-            {/* 3. CATEGORY NAVIGATION (Now Part of Sticky Block) */}
-            <div className="w-full bg-red-600 text-white shadow-sm transition-all duration-300">
-               <div className="container mx-auto px-4">
-                  <div className={`flex justify-between items-center ${isSticky ? 'h-10' : 'h-12 md:h-14'}`}>
-
-                     {/* Mobile Toggle */}
-                     <button onClick={() => setMobileMenuOpen(true)} className="md:hidden p-2 text-white">
-                        <Menu size={24} />
+                     {/* Mobile Search Icon */}
+                     <button className="md:hidden p-2 text-gray-400 hover:text-primary transition-colors">
+                        <Search size={22} />
                      </button>
 
-                     {/* Desktop Links */}
-                     <nav className={`hidden md:flex items-center gap-6 lg:gap-8 text-sm font-bold uppercase tracking-wide overflow-x-auto whitespace-nowrap w-full justify-center`}>
-                        {['Home', 'Rudraksha', 'Gemstones', 'Yantra', 'Parad', 'Sphatik', 'Malas', 'Bracelets', 'Sale'].map((item) => (
-                           <Link key={item} href={item === 'Home' ? '/' : `/category/${item.toLowerCase()}`} className="hover:text-yellow-200 transition-colors py-1 border-b-2 border-transparent hover:border-yellow-200">
-                              {item}
-                           </Link>
-                        ))}
-                     </nav>
+                     <Link href="/wishlist" className="hidden md:flex flex-col items-center group relative text-gray-400 hover:text-primary transition-colors">
+                        <div className="relative p-1">
+                           <Heart size={22} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+                           {wishlistCount > 0 && (
+                              <span className="absolute -top-1 -right-1 bg-primary text-black text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full animate-in fade-in zoom-in">{wishlistCount}</span>
+                           )}
+                        </div>
+                        <span className="text-[9px] font-medium uppercase tracking-widest mt-1 opacity-60 group-hover:opacity-100">Saved</span>
+                     </Link>
 
-                     {/* Sticky Right Actions (For Mobile in this bar) */}
-                     <div className="flex items-center gap-4 md:hidden">
-                        <Search size={20} />
-                        <Link href="/cart" className="relative">
-                           <ShoppingCart size={20} />
-                           {cartCount > 0 && <span className="absolute -top-2 -right-2 bg-white text-red-600 text-[10px] h-4 w-4 rounded-full flex items-center justify-center font-bold">{cartCount}</span>}
-                        </Link>
-                     </div>
+                     <Link href="/account" className="hidden md:flex flex-col items-center group text-gray-400 hover:text-primary transition-colors">
+                        <div className="relative p-1">
+                           <User size={22} className="group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+                        </div>
+                        <span className="text-[9px] font-medium uppercase tracking-widest mt-1 opacity-60 group-hover:opacity-100">Account</span>
+                     </Link>
+
+                     <Link href="/cart" className="flex flex-col items-center group relative text-white transition-colors">
+                        <div className="relative p-2 bg-white/5 rounded-full group-hover:bg-primary/20 transition-colors duration-300 border border-white/5 group-hover:border-primary/30">
+                           <ShoppingCart size={20} className="text-gray-200 group-hover:text-primary transition-colors duration-300" strokeWidth={1.5} />
+                           {cartCount > 0 && (
+                              <span className="absolute -top-1 -right-1 bg-primary text-black text-[10px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(212,175,55,0.4)] animate-in fade-in zoom-in">{cartCount}</span>
+                           )}
+                        </div>
+                     </Link>
                   </div>
                </div>
             </div>
-         </div>
 
-         {/* 4. MOBILE MENU DRAWER */}
-         <div className={`fixed inset-0 z-[60] bg-black bg-opacity-50 transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible md:hidden'}`} onClick={() => setMobileMenuOpen(false)}>
-            <div className={`absolute top-0 left-0 w-3/4 h-full bg-white shadow-xl transform transition-transform duration-300 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`} onClick={(e) => e.stopPropagation()}>
-               <div className="bg-red-600 p-4 flex justify-between items-center text-white">
-                  <span className="font-bold text-lg">Menu</span>
-                  <button onClick={() => setMobileMenuOpen(false)}><X size={24} /></button>
-               </div>
-               <div className="p-4 flex flex-col gap-4 overflow-y-auto h-full pb-20">
-                  {['Home', 'Rudraksha', 'Gemstones', 'Yantra', 'Parad', 'Sphatik', 'Malas'].map((item) => (
-                     <Link key={item} href={item === 'Home' ? '/' : `/category/${item.toLowerCase()}`} className="text-gray-800 font-medium border-b pb-2">
-                        {item}
+            {/* NAVIGATION LINKS (Desktop Only) */}
+            <div className="hidden md:block border-t border-white/5 bg-black/50 backdrop-blur-sm">
+               <div className="container mx-auto px-4 max-w-7xl">
+                  <nav className="flex justify-center items-center gap-10 py-3 overflow-x-auto">
+                     <Link
+                        href="/"
+                        className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-primary relative group py-1"
+                     >
+                        Home
+                        <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full opacity-50"></span>
                      </Link>
-                  ))}
+                     {categories.map((cat) => (
+                        <Link
+                           key={cat._id}
+                           href={`/category/${cat.slug}`}
+                           className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-primary relative group py-1"
+                        >
+                           {cat.name}
+                           <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full opacity-50"></span>
+                        </Link>
+                     ))}
+                  </nav>
+               </div>
+            </div>
+         </header>
+
+         {/* 3. MOBILE MENU DRAWER */}
+         <div className={`fixed inset-0 z-[60] bg-black/80 backdrop-blur-md transition-all duration-500 ${mobileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'}`} onClick={() => setMobileMenuOpen(false)}>
+            <div className={`absolute top-0 left-0 w-[85%] max-w-sm h-full bg-neutral-900 border-r border-white/10 shadow-2xl transform transition-transform duration-500 ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`} onClick={(e) => e.stopPropagation()}>
+               {/* Drawer Header */}
+               <div className="bg-black/50 p-6 flex justify-between items-center border-b border-white/5">
+                  <span className="font-serif font-bold text-xl tracking-wider text-white">MENU</span>
+                  <button onClick={() => setMobileMenuOpen(false)} className="hover:bg-white/10 rounded-full p-2 transition text-gray-400 hover:text-white"><X size={24} /></button>
+               </div>
+
+               {/* Drawer Content */}
+               <div className="py-4 px-6 h-full overflow-y-auto">
+                  <ul className="flex flex-col space-y-2">
+                     <li>
+                        <Link
+                           href="/"
+                           className="flex items-center justify-between py-4 text-gray-300 font-medium tracking-wide border-b border-white/5 hover:text-primary transition-colors"
+                           onClick={() => setMobileMenuOpen(false)}
+                        >
+                           Home
+                        </Link>
+                     </li>
+                     {categories.map((cat) => (
+                        <li key={cat._id}>
+                           <Link
+                              href={`/category/${cat.slug}`}
+                              className="flex items-center justify-between py-4 text-gray-300 font-medium tracking-wide border-b border-white/5 hover:text-primary transition-colors"
+                              onClick={() => setMobileMenuOpen(false)}
+                           >
+                              {cat.name}
+                           </Link>
+                        </li>
+                     ))}
+                     <li className="mt-8 pt-8 border-t border-white/10 space-y-4">
+                        <Link href="/account" className="flex items-center gap-4 py-3 text-gray-400 font-medium hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                           <User size={20} className="text-primary" /> My Profile
+                        </Link>
+                        <Link href="/wishlist" className="flex items-center gap-4 py-3 text-gray-400 font-medium hover:text-white transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                           <Heart size={20} className="text-primary" /> My Wishlist
+                        </Link>
+                     </li>
+                  </ul>
                </div>
             </div>
          </div>
 
-         {/* 5. MOBILE BOTTOM NAV */}
-         <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 z-50 flex justify-around items-center py-2 pb-safe shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-            <Link href="/" className="flex flex-col items-center text-red-600">
-               <Home size={20} />
-               <span className="text-[10px] mt-1 font-medium">Home</span>
+         {/* 4. MOBILE BOTTOM NAV (Fixed at bottom) */}
+         <div className="md:hidden fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-xl border-t border-white/10 z-50 flex justify-between px-8 items-center py-3 pb-safe">
+            <Link href="/" className="flex flex-col items-center text-primary gap-1">
+               <Home size={22} className="drop-shadow-[0_0_8px_rgba(212,175,55,0.3)]" />
+               <span className="text-[9px] font-medium tracking-wide">Home</span>
             </Link>
-            <Link href="/categories" className="flex flex-col items-center text-gray-500 hover:text-red-600">
-               <Grid size={20} />
-               <span className="text-[10px] mt-1 font-medium">Categories</span>
+            <Link href="/" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(true); }} className="flex flex-col items-center text-gray-500 hover:text-primary gap-1 transition-colors">
+               <Grid size={22} />
+               <span className="text-[9px] font-medium tracking-wide">Menu</span>
             </Link>
-            <Link href="/wishlist" className="flex flex-col items-center text-gray-500 hover:text-red-600">
-               <Heart size={20} />
-               <span className="text-[10px] mt-1 font-medium">Wishlist</span>
+            <Link href="/wishlist" className="flex flex-col items-center text-gray-500 hover:text-primary gap-1 transition-colors">
+               <Heart size={22} />
+               <span className="text-[9px] font-medium tracking-wide">Saved</span>
             </Link>
-            <Link href="/account" className="flex flex-col items-center text-gray-500 hover:text-red-600">
-               <User size={20} />
-               <span className="text-[10px] mt-1 font-medium">Account</span>
-            </Link>
-            <Link href="/cart" className="flex flex-col items-center text-gray-500 hover:text-red-600 relative">
-               <div className="relative">
-                  <ShoppingCart size={20} />
-                  {cartCount > 0 && <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full">{cartCount}</span>}
-               </div>
-               <span className="text-[10px] mt-1 font-medium">Cart</span>
+            <Link href="/account" className="flex flex-col items-center text-gray-500 hover:text-primary gap-1 transition-colors">
+               <User size={22} />
+               <span className="text-[9px] font-medium tracking-wide">Profile</span>
             </Link>
          </div>
-
-
       </>
    );
 }

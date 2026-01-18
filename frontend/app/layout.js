@@ -1,25 +1,22 @@
+import { Inter, Playfair_Display } from 'next/font/google';
 import '../styles/globals.css';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { ToastProvider } from '@/context/ToastContext';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' });
 
 export const metadata = {
-  title: 'E-Shop',
-  description: 'Best E-commerce platform',
+  title: 'Rudra Divine - Authentic Spiritual Products',
+  description: 'Discover genuine Rudraksha, Gemstones, and Yantras energized for your spiritual journey.',
 };
-
-import { CartProvider } from '../context/CartContext';
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="flex flex-col min-h-screen">
-        <CartProvider>
-          <Navbar />
-          <main className="flex-grow pb-10">
-            {children}
-          </main>
-          <Footer />
-        </CartProvider>
+      <body className={`${inter.variable} ${playfair.variable} font-sans flex flex-col min-h-screen`}>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

@@ -23,16 +23,21 @@ class ProductRepository {
     }
 
     // Improved findAll to match original controller's capabilities
-    async findWithQuery(keyword) {
-        const query = keyword
-            ? {
-                title: {
-                    $regex: keyword,
-                    $options: 'i',
-                },
-            }
-            : {};
-        return await Product.find(query);
+    async findWithQuery(keyword, category) {
+        const query = {};
+
+        if (keyword) {
+            query.title = {
+                $regex: keyword,
+                $options: 'i',
+            };
+        }
+
+        if (category) {
+            query.category = category;
+        }
+
+        return await Product.find(query).limit(10); // Limit related products to 10 for performance
     }
 
     async findById(id) {

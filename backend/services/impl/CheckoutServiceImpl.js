@@ -41,13 +41,20 @@ class CheckoutServiceImpl {
             // Stock deduction could happen here
         }
 
+        const gstAmount = Math.round(totalPrice * 0.18);
+        const finalAmount = Math.round(totalPrice + gstAmount);
+
         const orderData = {
             user: userId,
             products: orderItems,
             shippingAddress,
             paymentMethod,
             paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Paid',
-            totalAmount: totalPrice,
+            totalAmount: totalPrice, // Subtotal
+            // We should store tax/final explicitly if schema supports it, or valid total
+            // Based on schema, 'finalAmount' exists
+            finalAmount: finalAmount,
+            taxAmount: gstAmount
         };
 
         const createdOrder = await OrderRepository.create(orderData);
