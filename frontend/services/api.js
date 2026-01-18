@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// FORCE PROD URL - preventing localhost fallback
+const API_URL = 'https://e-comm-8ozk.onrender.com';
+
 const api = axios.create({
-    baseURL: 'https://e-comm-8ozk.onrender.com',
+    baseURL: API_URL,
     headers: {
         'Content-Type': 'application/json',
     },
