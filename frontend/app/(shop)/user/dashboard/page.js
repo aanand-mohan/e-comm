@@ -38,73 +38,81 @@ export default function UserDashboard() {
     if (!user) return <div className="text-center p-10">Please login to view your dashboard.</div>;
 
     return (
-        <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold mb-8">My Dashboard</h1>
+        <div className="container mx-auto px-4 py-8 max-w-7xl min-h-[60vh]">
+            <h1 className="text-3xl font-serif font-bold text-white tracking-wide mb-8">My Dashboard</h1>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {/* Profile Card */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 flex items-center gap-4">
-                    <div className="bg-blue-100 p-3 rounded-full">
-                        <UserIcon className="text-blue-600" size={24} />
+                <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/5 hover:border-primary/30 transition-all group flex items-center gap-4">
+                    <div className="bg-primary/10 p-4 rounded-full border border-primary/20 group-hover:scale-110 transition-transform duration-300">
+                        <UserIcon className="text-primary" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold">{user.name}</h2>
-                        <p className="text-gray-500 text-sm">{user.email}</p>
-                        <Link href="/profile" className="text-blue-500 text-sm hover:underline mt-1 block">Edit Profile</Link>
+                        <h2 className="text-lg font-bold text-white">{user.name}</h2>
+                        <p className="text-gray-400 text-sm mb-1">{user.email}</p>
+                        <Link href="/profile" className="text-primary text-xs font-medium uppercase tracking-wider hover:text-white transition-colors">Edit Profile</Link>
                     </div>
                 </div>
 
                 {/* Orders Card */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 flex items-center gap-4">
-                    <div className="bg-green-100 p-3 rounded-full">
-                        <Package className="text-green-600" size={24} />
+                <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/5 hover:border-primary/30 transition-all group flex items-center gap-4">
+                    <div className="bg-green-900/20 p-4 rounded-full border border-green-500/20 group-hover:scale-110 transition-transform duration-300">
+                        <Package className="text-green-500" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold">{orders.length} Orders</h2>
-                        <Link href="/user/orders" className="text-blue-500 text-sm hover:underline mt-1 block">View History</Link>
+                        <h2 className="text-lg font-bold text-white">{orders.length} Orders</h2>
+                        <Link href="/user/orders" className="text-green-500 text-xs font-medium uppercase tracking-wider hover:text-white transition-colors">View History</Link>
                     </div>
                 </div>
 
                 {/* Wishlist Card */}
-                <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 flex items-center gap-4">
-                    <div className="bg-red-100 p-3 rounded-full">
-                        <Heart className="text-red-600" size={24} />
+                <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-white/5 hover:border-primary/30 transition-all group flex items-center gap-4">
+                    <div className="bg-red-900/20 p-4 rounded-full border border-red-500/20 group-hover:scale-110 transition-transform duration-300">
+                        <Heart className="text-red-500" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold">Wishlist</h2>
-                        <Link href="/wishlist" className="text-blue-500 text-sm hover:underline mt-1 block">View Saved Items</Link>
+                        <h2 className="text-lg font-bold text-white">Wishlist</h2>
+                        <Link href="/wishlist" className="text-red-500 text-xs font-medium uppercase tracking-wider hover:text-white transition-colors">View Saved Items</Link>
                     </div>
                 </div>
             </div>
 
-            <h2 className="text-xl font-bold mb-4">Recent Orders</h2>
+            <h2 className="text-2xl font-serif font-bold text-white mb-6 flex items-center gap-2">
+                <span className="text-primary">Recent</span> Orders
+            </h2>
+
             {orders.length === 0 ? (
-                <p className="text-gray-500">No orders placed yet.</p>
+                <div className="bg-neutral-900/30 rounded-2xl border border-white/5 p-12 text-center">
+                    <Package size={48} className="mx-auto text-gray-700 mb-4" />
+                    <p className="text-gray-400">No recent orders found. Start your spiritual journey today.</p>
+                </div>
             ) : (
-                <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <ul className="divide-y divide-gray-200">
+                <div className="bg-neutral-900/50 backdrop-blur-sm shadow-lg rounded-2xl border border-white/5 overflow-hidden">
+                    <ul className="divide-y divide-white/5">
                         {orders.slice(0, 5).map((order) => (
-                            <li key={order._id}>
-                                <div className="px-4 py-4 sm:px-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm font-medium text-green-600 truncate">
-                                            Order #{order._id.substring(0, 8)}
+                            <li key={order._id} className="hover:bg-white/5 transition-colors duration-200">
+                                <div className="px-6 py-5">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="text-sm font-mono font-medium text-primary/80 bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                                            #{order._id.substring(0, 8)}
                                         </div>
-                                        <div className="ml-2 flex-shrink-0 flex">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${order.orderStatus === 'Delivered' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                        <div className="flex-shrink-0">
+                                            <span className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-bold rounded-full uppercase tracking-wider border ${order.orderStatus === 'Delivered'
+                                                    ? 'bg-green-900/20 text-green-400 border-green-500/30'
+                                                    : order.orderStatus === 'Cancelled'
+                                                        ? 'bg-red-900/20 text-red-400 border-red-500/30'
+                                                        : 'bg-yellow-900/20 text-yellow-400 border-yellow-500/30'
                                                 }`}>
                                                 {order.orderStatus}
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="mt-2 sm:flex sm:justify-between">
-                                        <div className="sm:flex">
-                                            <p className="flex items-center text-sm text-gray-500">
-                                                Placed on {new Date(order.createdAt).toLocaleDateString()}
-                                            </p>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <div className="text-gray-400 flex items-center gap-1">
+                                            <span className="text-gray-600">Placed on</span> {new Date(order.createdAt).toLocaleDateString()}
                                         </div>
-                                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                                            <p>Total: ₹{order.totalAmount}</p>
+                                        <div className="text-white font-bold text-lg">
+                                            ₹{order.totalAmount.toLocaleString()}
                                         </div>
                                     </div>
                                 </div>

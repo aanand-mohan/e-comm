@@ -66,7 +66,7 @@ export default function CategoryShowcase() {
                             <Link href={`/category/${cat.slug}`} className="block w-full h-full relative">
                                 {/* Image using Next.js Image */}
                                 <Image
-                                    src={cat.image || 'https://images.unsplash.com/photo-1620021665471-ca0afcb10243?w=800&auto=format&fit=crop&q=60'} // Fallback
+                                    src={cat.image || '/images/category-fallback.png'} // Fallback
                                     alt={cat.name}
                                     fill
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"

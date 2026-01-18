@@ -1,11 +1,12 @@
+
 node_modules/
-.env
 .next/
 dist/
 build/
-.vscode/
-.idea/
-*.log
+.env
+.env.local
 .DS_Store
 coverage/
-.git/
+backend/env
+backend/.env
+frontend/.env

@@ -5,65 +5,80 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
-import { useContent } from '@/hooks/useContent';
+import api from '@/services/api';
 
 const defaultSlides = [
     {
-        id: 1,
-        image: 'https://images.unsplash.com/photo-1620021665471-ca0afcb10243?w=1600&auto=format&fit=crop&q=80',
+        _id: 'default-1',
+        image: '/images/hero-awaken.png',
         title: 'Awaken Your Inner Light',
         subtitle: 'Begin your sacred journey. Align your energy with the cosmos through authentic spiritual tools.',
-        cta: 'Start the Journey'
+        cta: 'Start the Journey',
+        link: '/category/all'
     },
     {
-        id: 2,
-        image: 'https://images.unsplash.com/photo-1615485925763-8678628890da?w=1600&auto=format&fit=crop&q=80',
+        _id: 'default-2',
+        image: '/images/hero-balance.png',
         title: 'Balance & Protection',
         subtitle: 'Ancient Vedic wisdom to shield your aura and harmonize your life force.',
-        cta: 'Find Your Balance'
+        cta: 'Find Your Balance',
+        link: '/category/all'
     },
     {
-        id: 3,
-        image: 'https://images.unsplash.com/photo-1632516167262-e1a49e6d0a7a?w=1600&auto=format&fit=crop&q=80',
+        _id: 'default-3',
+        image: '/images/hero-transform.png',
         title: 'Transform Your Reality',
         subtitle: 'Powerful Yantras and Parad aimed at manifesting abundance and spiritual growth.',
-        cta: 'Experience Transformation'
+        cta: 'Experience Transformation',
+        link: '/category/all'
     }
 ];
 
 export default function HeroSection() {
     const [current, setCurrent] = useState(0);
-    const { getContent, loading } = useContent('home_hero');
     const [slides, setSlides] = useState(defaultSlides);
+    const [loading, setLoading] = useState(true);
 
-    // Update slides with dynamic content when loaded
     useEffect(() => {
-        if (!loading) {
-            const title = getContent('home_hero_title');
-            const subtitle = getContent('home_hero_subtitle');
-            const cta = getContent('home_hero_cta');
+        const fetchBanners = async () => {
+            try {
+                const { data } = await api.get('/api/banners');
+                // Filter for Home Hero position and Active status
+                const heroBanners = data.filter(
+                    b => b.position === 'home-hero' && b.isActive
+                );
 
-            // We update the first slide to reflect the CMS settings
-            // In a full CMS, we might have an array of slides, but for now we control the "Main" message via CMS
-            if (title || subtitle || cta) {
-                setSlides(prev => {
-                    const newSlides = [...prev];
-                    newSlides[0] = {
-                        ...newSlides[0],
-                        title: title || newSlides[0].title,
-                        subtitle: subtitle || newSlides[0].subtitle,
-                        cta: cta || newSlides[0].cta
-                    };
-                    return newSlides;
-                });
+                if (heroBanners.length > 0) {
+                    // Sort by display order
+                    heroBanners.sort((a, b) => a.displayOrder - b.displayOrder);
+
+                    // Map to slide format
+                    const mappedSlides = heroBanners.map(b => ({
+                        _id: b._id,
+                        image: b.image,
+                        title: b.title,
+                        subtitle: 'Discover the divine energy of our authentic collection.', // Banners might not have subtitle, use generic or add to schema later
+                        cta: 'Explore Now', // Generic CTA or add to schema
+                        link: b.link || '/category/all'
+                    }));
+                    setSlides(mappedSlides);
+                }
+            } catch (err) {
+                console.error("Failed to fetch hero banners", err);
+            } finally {
+                setLoading(false);
             }
-        }
-    }, [loading, getContent]);
+        };
+
+        fetchBanners();
+    }, []);
 
     useEffect(() => {
+        if (slides.length <= 1) return; // Don't auto-scroll if only 1 slide
+
         const timer = setInterval(() => {
             setCurrent((prev) => (prev + 1) % slides.length);
-        }, 5000); // Slowed down to 5s for better readability
+        }, 5000);
         return () => clearInterval(timer);
     }, [slides.length]);
 
@@ -71,26 +86,28 @@ export default function HeroSection() {
         <section className="relative h-[85vh] w-full overflow-hidden bg-black text-white">
             <AnimatePresence mode='wait'>
                 <motion.div
-                    key={current}
+                    key={loading ? 'loading' : slides[current]._id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 1 }}
                     className="absolute inset-0"
                 >
-                    {/* Background Image using Next.js Image */}
+                    {/* Background Image */}
                     <div className="relative w-full h-full">
-                        <Image
+                        {/* If using remote images (Cloudinary/Unsplash), width/height must be set or fill used correctly with domains config. 
+                            Since we use 'fill', it works generally but requires domain in next.config or unoptimized. 
+                            For safety with external URLs (like banner.image), we use standard img tag or unoptimized Image if needed.
+                            Let's use standard img for flexibility with external URLs without config changes right now. */}
+                        <img
                             src={slides[current].image}
                             alt={slides[current].title}
-                            fill
-                            priority
-                            className="object-cover opacity-80"
+                            className="w-full h-full object-cover opacity-80"
                         />
                     </div>
 
-                    {/* Gradient Overlay - Lighter */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent" />
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent" />
                 </motion.div>
             </AnimatePresence>
 
@@ -104,7 +121,7 @@ export default function HeroSection() {
                     className="max-w-2xl space-y-6"
                 >
                     <span className="text-primary font-bold tracking-[0.3em] uppercase text-sm md:text-base">
-                        {!loading && getContent('home_hero_label', 'Rudra Divine Spiritual Store')}
+                        Rudra Divine Spiritual Store
                     </span>
 
                     <h1 className="text-5xl md:text-7xl font-serif font-bold leading-tight drop-shadow-lg">
@@ -116,8 +133,8 @@ export default function HeroSection() {
                     </p>
 
                     <div className="pt-4">
-                        <Link href="/category/all">
-                            <button className="bg-primary text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-secondary hover:scale-105 transition-all duration-300 flex items-center gap-2">
+                        <Link href={slides[current].link || '#'}>
+                            <button className="bg-primary text-black px-8 py-4 rounded-full font-bold text-lg hover:bg-white hover:scale-105 transition-all duration-300 flex items-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.4)]">
                                 {slides[current].cta} <ChevronRight size={20} />
                             </button>
                         </Link>
@@ -125,15 +142,17 @@ export default function HeroSection() {
                 </motion.div>
 
                 {/* Progress Indicators */}
-                <div className="absolute bottom-12 left-4 md:left-0 right-0 flex justify-center gap-3">
-                    {slides.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setCurrent(idx)}
-                            className={`h-1 rounded-full transition-all duration-300 ${idx === current ? 'w-12 bg-primary' : 'w-4 bg-gray-600'}`}
-                        />
-                    ))}
-                </div>
+                {slides.length > 1 && (
+                    <div className="absolute bottom-12 left-4 md:left-0 right-0 flex justify-center gap-3">
+                        {slides.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrent(idx)}
+                                className={`h-1 rounded-full transition-all duration-300 ${idx === current ? 'w-12 bg-primary' : 'w-4 bg-gray-600'}`}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
         </section>
     );

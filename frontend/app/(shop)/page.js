@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import HeroSection from '@/components/HeroSection';
 import TrustStrip from '@/components/TrustStrip';
 import CategoryShowcase from '@/components/CategoryShowcase';
+import SecondaryBanners from '@/components/SecondaryBanners';
 import BrandStory from '@/components/BrandStory';
 import ProductCard from '@/components/ProductCard';
 import api from '@/services/api';
@@ -41,6 +42,9 @@ export default function Home() {
 
       {/* 3. Category Showcase */}
       <CategoryShowcase />
+
+      {/* 3.5 Secondary Banner Section */}
+      <SecondaryBanners />
 
       {/* 4. Brand Story */}
       <BrandStory />
