@@ -27,30 +27,33 @@ function LoginForm() {
         try {
             const { data } = await api.post('/api/users/login', { email, password });
 
-            localStorage.setItem('userInfo', JSON.stringify(data));
-            // SYNC GUEST CART
-            try {
-                const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-                if (guestCart.length > 0) {
-                    const validItems = guestCart.filter(item => item && item.product && item.product._id);
-                    const cartPromises = validItems.map(item =>
-                        api.post('/api/cart', { productId: item.product._id, quantity: item.quantity })
-                    );
-                    await Promise.all(cartPromises);
-                    localStorage.removeItem('guestCart');
-                }
-            } catch (syncError) {
-                console.error('Cart sync failed:', syncError);
-            }
-
             if (data.role === 'admin') {
-                router.push('/admin/dashboard');
+                setError('This login is for customers only. Please use the Admin Portal.');
             } else if (data.role === 'developer') {
-                router.push('/developer/dashboard');
-            } else if (data.role === 'user') {
-                router.push('/user/dashboard');
+                setError('Restricted: Please use the Developer Portal.');
             } else {
-                router.push(redirect);
+                localStorage.setItem('userInfo', JSON.stringify(data));
+
+                // SYNC GUEST CART
+                try {
+                    const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
+                    if (guestCart.length > 0) {
+                        const validItems = guestCart.filter(item => item && item.product && item.product._id);
+                        const cartPromises = validItems.map(item =>
+                            api.post('/api/cart', { productId: item.product._id, quantity: item.quantity })
+                        );
+                        await Promise.all(cartPromises);
+                        localStorage.removeItem('guestCart');
+                    }
+                } catch (syncError) {
+                    console.error('Cart sync failed:', syncError);
+                }
+
+                if (data.role === 'user') {
+                    router.push('/user/dashboard');
+                } else {
+                    router.push(redirect);
+                }
             }
         } catch (err) {
             const msg = err.response?.data?.message || 'Invalid email or password';

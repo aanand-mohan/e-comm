@@ -58,7 +58,7 @@ export default function AdminSidebar() {
                 <button
                     onClick={() => {
                         localStorage.removeItem('userInfo');
-                        window.location.href = '/login';
+                        window.location.href = '/admin';
                     }}
                     className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm font-medium text-gray-400 hover:bg-red-900/20 hover:text-red-400 hover:border hover:border-red-900/30 transition-all border border-transparent"
                 >

@@ -32,14 +32,25 @@ export default function DeveloperDashboard() {
     return (
         <div className="min-h-screen bg-black text-gray-300 p-6 font-sans">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-6">
-                <div className="p-3 bg-white/5 rounded-full border border-white/10">
-                    <Terminal size={32} className="text-primary" />
+            <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-white/5 rounded-full border border-white/10">
+                        <Terminal size={32} className="text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-4xl font-serif font-bold text-white tracking-wide">Developer <span className="text-primary">Console</span></h1>
+                        <p className="text-xs text-gray-500 uppercase tracking-[0.2em] mt-1">System Administration Access</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-4xl font-serif font-bold text-white tracking-wide">Developer <span className="text-primary">Console</span></h1>
-                    <p className="text-xs text-gray-500 uppercase tracking-[0.2em] mt-1">System Administration Access</p>
-                </div>
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('userInfo');
+                        window.location.href = '/developer';
+                    }}
+                    className="px-4 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 text-red-400 text-sm font-bold rounded-lg transition-all"
+                >
+                    LOGOUT_SESSION
+                </button>
             </div>
 
             {/* Stats Grid */}
