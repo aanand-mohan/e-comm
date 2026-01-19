@@ -84,14 +84,6 @@ export default function Navbar() {
                         <span className="text-2xl md:text-3xl filter drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]">🕉️</span>
                         <div className="flex flex-col leading-none">
                            <span className="font-serif font-bold text-white text-xl md:text-2xl tracking-wide uppercase group-hover:text-primary transition-colors duration-300">
-                              {!loading && getContent('navbar_logo_text', 'Rudra')}
-                              {/* If you want "Divine" to be colored, we might need a richer text editor or just stick to simple text for now. 
-                                  For now, let's assume the CMS sends the full string. I'll split it or just render as is. 
-                                  Let's just render it fully. The user can type "RUDRA DIVINE"
-                                  Wait, the design has "Rudra" in white and "Divine" in primary color.
-                                  To keep it editable but maintain design, I probably need two fields or HTML support.
-                                  Let's stick to simple text for MVP control. 
-                               */}
                               {!loading ? getContent('navbar_logo_text', 'RudraDivine') : 'RudraDivine'}
                            </span>
                            <span className="text-[8px] md:text-[9px] text-gray-400 tracking-[0.3em] font-medium uppercase mt-1">
