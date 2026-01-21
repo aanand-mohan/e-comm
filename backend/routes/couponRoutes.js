@@ -2,6 +2,7 @@ import express from 'express';
 import {
     createCoupon,
     getCoupons,
+    getActiveCoupons,
     updateCoupon,
     disableCoupon,
     applyCoupon
@@ -9,6 +10,9 @@ import {
 import { protect, admin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Public Routes
+router.get('/active', getActiveCoupons);
 
 // Admin Routes
 router.route('/')
@@ -20,6 +24,6 @@ router.route('/:id')
     .delete(protect, admin, disableCoupon);
 
 // User Routes
-router.post('/apply', protect, applyCoupon);
+router.post('/apply', applyCoupon);
 
 export default router;

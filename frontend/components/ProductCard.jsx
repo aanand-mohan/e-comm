@@ -1,12 +1,60 @@
 'use client';
 
 import Link from 'next/link';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart, Ticket } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import api from '@/services/api';
+import { useMemo } from 'react';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, activeCoupons = [] }) {
     const { refreshCounts, addToCart } = useCart();
+
+    const bestCoupon = useMemo(() => {
+        if (!activeCoupons || activeCoupons.length === 0 || !product) return null;
+
+        let best = null;
+        let maxDiscount = 0;
+
+        activeCoupons.forEach(coupon => {
+            // Check Category Match
+            let isMatch = false;
+            if (coupon.applicableCategory) {
+                if (product.category?.toLowerCase() === coupon.applicableCategory.toLowerCase()) {
+                    isMatch = true;
+                    if (coupon.applicableSubcategory) {
+                        // If coupon has subcategory, product MUST match it
+                        if (product.subcategory?.toLowerCase() !== coupon.applicableSubcategory.toLowerCase()) {
+                            isMatch = false;
+                        }
+                    }
+                }
+            } else {
+                // Global coupon (no category restriction) - technically applicable to all
+                // But usually we prefer specific badges. Let's assume global coupons also show.
+                isMatch = true;
+            }
+
+            if (isMatch) {
+                // Calculate discount for this product
+                let discount = 0;
+                if (coupon.discountType === 'percentage') {
+                    discount = (product.price * coupon.discountValue) / 100;
+                    if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
+                        discount = coupon.maxDiscountAmount;
+                    }
+                } else {
+                    discount = coupon.discountValue; // Flat discount
+                }
+
+                if (discount > maxDiscount) {
+                    maxDiscount = discount;
+                    best = { ...coupon, savings: discount };
+                }
+            }
+        });
+
+        return best;
+    }, [activeCoupons, product]);
 
     if (!product) return null;
 
@@ -51,13 +99,25 @@ export default function ProductCard({ product }) {
                             Sold Out
                         </span>
                     )}
+                    {/* Coupon Badge */}
+                    {bestCoupon && product.stock > 0 && (
+                        <span className="bg-primary/90 text-black backdrop-blur-sm text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-[0_0_10px_rgba(212,175,55,0.4)] border border-primary/20 flex items-center gap-1 animate-pulse">
+                            <Ticket size={10} className="fill-black" />
+                            {bestCoupon.discountType === 'percentage' ? `${bestCoupon.discountValue}% OFF` : `₹${bestCoupon.discountValue} OFF`}
+                        </span>
+                    )}
                 </div>
             </Link>
 
             {/* Content */}
             <div className="p-5 flex flex-col flex-grow relative bg-neutral-900/50">
-                <div className="mb-2">
+                <div className="mb-2 flex justify-between items-start">
                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{product.category}</span>
+                    {bestCoupon && product.stock > 0 && (
+                        <span className="text-[10px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded border border-primary/20">
+                            Save ₹{Math.round(bestCoupon.savings)}
+                        </span>
+                    )}
                 </div>
 
                 <Link href={`/product/${product._id}`} className="block flex-grow">

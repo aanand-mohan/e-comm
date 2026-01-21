@@ -27,20 +27,11 @@ export default function CartPage() {
     useEffect(() => {
         const fetchCoupons = async () => {
             try {
-                // Assuming public GET returns all, we filter active ones client-side or use a specific public endpoint.
-                // admin route is /api/coupons. Ideally we should have a public /api/coupons/public or similar.
-                // Using existing admin route might 401 if protect middleware is on. 
-                // Let's assume /api/coupons requires admin based on controller check. 
-                // We actually don't have a public active coupons endpoint in the viewed routes.
-                // So... I'll skip fetching the list for now to avoid 401 errors, unless I add a route.
-                // But the user requested "where showing this banner", maybe implied showing coupons too?
-                // I will add a try-catch and if it fails (401), just ignore.
-                const { data } = await api.get('/api/coupons');
-                const active = data.filter(c => c.isActive && new Date(c.expiryDate) > new Date());
-                setActiveCoupons(active);
+                // Fetch active coupons for display or recommendations
+                const { data } = await api.get('/api/coupons/active');
+                setActiveCoupons(data);
             } catch (err) {
-                // Likely 401 if user is not admin, which is expected for normal users.
-                // So we just silently fail or don't set activeCoupons.
+                console.error("Failed to fetch coupons", err);
             }
         };
         // Only attempt if we think we might have access or if the route gets public access later.
@@ -474,7 +465,7 @@ export default function CartPage() {
                                     className="flex-shrink-0 px-3 transition-all duration-500"
                                     style={{ width: `${100 / itemsPerView}%` }}
                                 >
-                                    <ProductCard product={p} />
+                                    <ProductCard product={p} activeCoupons={activeCoupons} />
                                 </div>
                             ))}
                         </motion.div>

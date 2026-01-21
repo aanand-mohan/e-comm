@@ -28,7 +28,7 @@ class CartServiceImpl {
         // For consistency, let's assume we populate here or add findWithCart method in Repo.
         // Using mongoose method on doc for now:
         // Populate title, price, images, AND category
-        await user.populate('cart.product', 'title price images category');
+        await user.populate('cart.product', 'title price images category subcategory');
 
         // Filter out null products (in case product was deleted)
         const validCart = user.cart.filter(item => item.product != null);

@@ -5,7 +5,7 @@ import Category from '../models/Category.js';
 // @access  Private/Admin
 const createCategory = async (req, res) => {
     try {
-        const { name, slug, description, image } = req.body;
+        const { name, slug, description, image, subcategories } = req.body;
 
         // Auto-generate slug if not provided
         const categorySlug = slug || name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
@@ -15,11 +15,23 @@ const createCategory = async (req, res) => {
             return res.status(400).json({ message: 'Category already exists' });
         }
 
+        // Process subcategories if present
+        let processedSubcategories = [];
+        if (subcategories && Array.isArray(subcategories)) {
+            processedSubcategories = subcategories.map(sub => ({
+                name: sub.name,
+                slug: sub.slug || sub.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''),
+                image: sub.image || '',
+                isActive: true
+            }));
+        }
+
         const category = await Category.create({
             name,
             slug: categorySlug,
             description,
             image,
+            subcategories: processedSubcategories
         });
 
         res.status(201).json(category);
@@ -99,10 +111,49 @@ const deleteCategory = async (req, res) => {
     }
 };
 
+// @desc    Add subcategory
+// @route   POST /api/categories/:id/subcategories
+// @access  Private/Admin
+const addSubcategory = async (req, res) => {
+    try {
+        const category = await Category.findById(req.params.id);
+
+        if (category) {
+            const { name, image } = req.body;
+            // distinct slug
+            const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
+
+            const subcategoryExists = category.subcategories.find(sub => sub.slug === slug);
+
+            if (subcategoryExists) {
+                return res.status(400).json({ message: 'Subcategory already exists' });
+            }
+
+            const subcategory = {
+                name,
+                slug,
+                image,
+                isActive: true
+            };
+
+            category.subcategories.push(subcategory);
+            await category.save();
+
+            res.status(201).json(category);
+        } else {
+            res.status(404).json({ message: 'Category not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
 export {
     createCategory,
     getCategories,
     getAdminCategories,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    addSubcategory
 };

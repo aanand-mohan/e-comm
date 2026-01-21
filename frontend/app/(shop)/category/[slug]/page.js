@@ -13,36 +13,68 @@ export default function CategoryPage({ params }) {
 
     // Filter States
     const [selectedCategories, setSelectedCategories] = useState([]);
+    const [selectedSubcategories, setSelectedSubcategories] = useState([]);
     const [priceRange, setPriceRange] = useState({ min: '', max: '' });
     const [tempPriceRange, setTempPriceRange] = useState({ min: '', max: '' }); // For input fields
     const [sortBy, setSortBy] = useState('Featured');
+
+    // Data
+    const [categoriesData, setCategoriesData] = useState([]);
+    const searchParams = useSearchParams();
+    const urlSubcategory = searchParams.get('subcategory');
 
     // Initialize selected category based on slug
     useEffect(() => {
         if (slug) {
             // Capitalize first letter to match checkbox labels/data likely format
-            const formattedSlug = slug.charAt(0).toUpperCase() + slug.slice(1);
-            // We initially only select the category from the URL
-            setSelectedCategories([formattedSlug]);
+            // const formattedSlug = slug.charAt(0).toUpperCase() + slug.slice(1); // Removed: Use case-insensitive match or mapped name
+            // Better: wait for categories to load to match exact name, or just use slug if backend supports it.
+            // For now, let's just trigger the initial selection logic once categories are loaded or valid.
+            // actually, we can just push the slug or name.
+
+            // We'll rely on string matching.
+            // But wait, the previous code hardcoded 'Rudraksha'.
+            // Let's assume the slug matches the category name roughly or we find it.
         }
-    }, [slug]);
+
+        if (urlSubcategory) {
+            setSelectedSubcategories([urlSubcategory]);
+        }
+    }, [slug, urlSubcategory]);
+
+    // Coupons State
+    const [activeCoupons, setActiveCoupons] = useState([]);
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             setLoading(true);
             try {
-                // Fetch ALL products so we can filter client-side
-                const { data } = await api.get('/api/products');
-                setAllProducts(data);
+                const [productsRes, categoriesRes, couponsRes] = await Promise.all([
+                    api.get('/api/products'),
+                    api.get('/api/categories'),
+                    api.get('/api/coupons/active')
+                ]);
+
+                setAllProducts(productsRes.data);
+                setCategoriesData(categoriesRes.data);
+                setActiveCoupons(couponsRes.data);
+
+                // initial selection
+                if (slug) {
+                    const foundCat = categoriesRes.data.find(c => c.slug === slug);
+                    if (foundCat) setSelectedCategories([foundCat.name]);
+                    else setSelectedCategories([slug.charAt(0).toUpperCase() + slug.slice(1)]);
+                }
+
             } catch (error) {
-                console.error('Failed to fetch products:', error);
+                console.error('Failed to fetch data:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProducts();
-    }, []);
+        fetchData();
+    }, [slug]);
 
     // Apply Filters & Sort
     useEffect(() => {
@@ -54,11 +86,21 @@ export default function CategoryPage({ params }) {
         // Note: The URL slug category is added to selectedCategories on mount.
         if (selectedCategories.length > 0) {
             result = result.filter(p => {
-                // Case-insensitive match against any selected category
                 return selectedCategories.some(cat =>
                     p.category.toLowerCase() === cat.toLowerCase() ||
-                    // Handle potential sub-matches if categories are broad
                     p.category.toLowerCase().includes(cat.toLowerCase())
+                );
+            });
+        }
+
+        // 1.5 Subcategory Filter
+        if (selectedSubcategories.length > 0) {
+            result = result.filter(p => {
+                return p.subcategory && selectedSubcategories.some(sub =>
+                    p.subcategory.toLowerCase() === sub.toLowerCase() ||
+                    // handle slug vs name mismatch? p.subcategory is likely a name or slug. 
+                    // in productController we saved whatever was sent. The UI sends name. 
+                    p.subcategory.toLowerCase().includes(sub.toLowerCase())
                 );
             });
         }
@@ -99,13 +141,20 @@ export default function CategoryPage({ params }) {
 
 
     // Handlers
-    const handleCategoryChange = (cat) => {
+    const handleCategoryChange = (catName) => {
         setSelectedCategories(prev => {
-            if (prev.includes(cat)) {
-                return prev.filter(c => c !== cat);
+            if (prev.includes(catName)) {
+                return prev.filter(c => c !== catName);
             } else {
-                return [...prev, cat];
+                return [...prev, catName];
             }
+        });
+    };
+
+    const handleSubcategoryChange = (subSlug) => {
+        setSelectedSubcategories(prev => {
+            if (prev.includes(subSlug)) return prev.filter(s => s !== subSlug);
+            return [...prev, subSlug];
         });
     };
 
@@ -135,7 +184,14 @@ export default function CategoryPage({ params }) {
         if (slug) fetchBanners();
     }, [slug]);
 
-    const categoriesList = ['Rudraksha', 'Gemstones', 'Yantras', 'Malas', 'Spiritual Idols', 'Parads', 'Sphatiks'];
+    // const categoriesList = ['Rudraksha', 'Gemstones', 'Yantras', 'Malas', 'Spiritual Idols', 'Parads', 'Sphatiks'];
+
+    // Derive available subcategories from selected categories
+    const availableSubcats = useMemo(() => {
+        return categoriesData
+            .filter(c => selectedCategories.includes(c.name))
+            .flatMap(c => c.subcategories || []);
+    }, [categoriesData, selectedCategories]);
 
     return (
         <main className="min-h-screen bg-black text-white">
@@ -204,26 +260,31 @@ export default function CategoryPage({ params }) {
                     {/* SIDEBAR FILTERS */}
                     <aside className="hidden md:block w-64 flex-shrink-0 space-y-8 sticky top-24 h-fit">
                         {/* Categories */}
-                        <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 shadow-lg">
-                            <h3 className="font-serif font-bold text-lg mb-4 text-white border-b border-white/10 pb-2">Categories</h3>
-                            <ul className="space-y-3 text-sm text-gray-400">
-                                {categoriesList.map((cat) => (
-                                    <li key={cat}>
-                                        <label className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors group">
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-gray-600 bg-black text-primary focus:ring-primary focus:ring-offset-black accent-primary w-4 h-4"
-                                                checked={selectedCategories.includes(cat)}
-                                                onChange={() => handleCategoryChange(cat)}
-                                            />
-                                            <span className={`group-hover:translate-x-1 transition-transform ${selectedCategories.includes(cat) ? 'text-white font-bold' : ''}`}>
-                                                {cat}
-                                            </span>
-                                        </label>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {/* Subcategories Filter - Only for current category */}
+                        {categoriesData.find(c => c.slug === slug)?.subcategories?.length > 0 && (
+                            <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 shadow-lg">
+                                <h3 className="font-serif font-bold text-lg mb-4 text-white border-b border-white/10 pb-2">Subcategories</h3>
+                                <ul className="space-y-3 text-sm text-gray-400">
+                                    {categoriesData.find(c => c.slug === slug).subcategories.map((sub, idx) => (
+                                        <li key={idx}>
+                                            <label className="flex items-center gap-3 cursor-pointer hover:text-primary transition-colors group">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-gray-600 bg-black text-primary focus:ring-primary focus:ring-offset-black accent-primary w-4 h-4"
+                                                    checked={selectedSubcategories.includes(sub.slug)}
+                                                    onChange={() => handleSubcategoryChange(sub.slug)}
+                                                />
+                                                <span className={`group-hover:translate-x-1 transition-transform ${selectedSubcategories.includes(sub.slug) ? 'text-white font-bold' : ''}`}>
+                                                    {sub.name}
+                                                </span>
+                                            </label>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {/* Subcategories (Dynamic) - REMOVED (Nested above) */}
 
                         {/* Price Filter */}
                         <div className="bg-neutral-900/50 backdrop-blur-sm p-6 rounded-2xl border border-white/5 shadow-lg">
@@ -285,7 +346,7 @@ export default function CategoryPage({ params }) {
                                 <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {filteredProducts.map((product) => (
                                         <div key={product._id} className="h-full">
-                                            <ProductCard product={product} />
+                                            <ProductCard product={product} activeCoupons={activeCoupons} />
                                         </div>
                                     ))}
                                 </div>

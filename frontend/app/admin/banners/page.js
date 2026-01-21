@@ -6,7 +6,7 @@ import { useToast } from '@/context/ToastContext';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import Modal from '@/components/ui/Modal';
-import { Plus, Edit2, Trash2, Image as ImageIcon, Search, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, Search, ExternalLink, UploadCloud } from 'lucide-react';
 import Skeleton from '@/components/ui/Skeleton';
 
 export default function BannersPage() {
@@ -26,6 +26,8 @@ export default function BannersPage() {
         displayOrder: 0,
         isActive: true
     });
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const positions = [
@@ -53,6 +55,8 @@ export default function BannersPage() {
 
     const resetForm = () => {
         setFormData({ title: '', image: '', link: '', position: 'home-hero', displayOrder: 0, isActive: true });
+        setSelectedFile(null);
+        setPreviewUrl('');
         setEditingBanner(null);
     };
 
@@ -67,21 +71,50 @@ export default function BannersPage() {
                 displayOrder: banner.displayOrder,
                 isActive: banner.isActive
             });
+            setPreviewUrl(banner.image);
+            setSelectedFile(null);
         } else {
             resetForm();
         }
         setIsModalOpen(true);
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         try {
+            const data = new FormData();
+            data.append('title', formData.title);
+            data.append('link', formData.link);
+            data.append('position', formData.position);
+            data.append('displayOrder', formData.displayOrder);
+            data.append('isActive', formData.isActive);
+
+            if (selectedFile) {
+                data.append('image', selectedFile);
+            } else {
+                data.append('image', formData.image);
+            }
+
+            const config = {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            };
+
             if (editingBanner) {
-                await api.put(`/api/banners/${editingBanner._id}`, formData);
+                await api.put(`/api/banners/${editingBanner._id}`, data, config);
                 success('Banner updated successfully');
             } else {
-                await api.post('/api/banners', formData);
+                await api.post('/api/banners', data, config);
                 success('Banner created successfully');
             }
             setIsModalOpen(false);
@@ -248,21 +281,30 @@ export default function BannersPage() {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Image URL</label>
-                        <input
-                            type="url"
-                            required
-                            placeholder="https://..."
-                            className="w-full px-4 py-2 rounded-lg bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all"
-                            value={formData.image}
-                            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                        />
-                        {formData.image && (
-                            <div className="mt-2 h-32 rounded-lg overflow-hidden border border-white/10 bg-neutral-900 relative">
-                                <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-                                <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-lg pointer-events-none"></div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Banner Image</label>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-center w-full">
+                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-xl cursor-pointer bg-neutral-900 hover:bg-white/5 transition-colors group">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <UploadCloud className="w-8 h-8 text-gray-500 group-hover:text-primary transition-colors mb-2" />
+                                        <p className="text-sm text-gray-400 group-hover:text-white transition-colors">Click to upload image</p>
+                                        <p className="text-xs text-gray-600 mt-1">SVG, PNG, JPG or WEBP</p>
+                                    </div>
+                                    <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+                                </label>
                             </div>
-                        )}
+
+                            {previewUrl && (
+                                <div className="relative h-40 rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                                        <p className="text-xs text-white/80 font-mono">
+                                            {selectedFile ? selectedFile.name : 'Current Image'}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div>

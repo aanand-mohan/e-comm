@@ -28,6 +28,8 @@ export default function CouponsPage() {
     });
     const [submitting, setSubmitting] = useState(false);
 
+    const [categoriesData, setCategoriesData] = useState([]);
+
     const fetchCoupons = async () => {
         try {
             const { data } = await api.get('/api/coupons');
@@ -40,12 +42,31 @@ export default function CouponsPage() {
         }
     };
 
+    const fetchCategories = async () => {
+        try {
+            const { data } = await api.get('/api/categories');
+            setCategoriesData(data);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     useEffect(() => {
         fetchCoupons();
+        fetchCategories();
     }, []);
 
     const resetForm = () => {
-        setFormData({ code: '', discountType: 'percentage', discountValue: 0, minOrderAmount: 0, expiryDate: '', isActive: true });
+        setFormData({
+            code: '',
+            discountType: 'percentage',
+            discountValue: 0,
+            minOrderAmount: 0,
+            expiryDate: '',
+            isActive: true,
+            applicableCategory: '',
+            applicableSubcategory: ''
+        });
         setEditingCoupon(null);
     };
 
@@ -58,7 +79,9 @@ export default function CouponsPage() {
                 discountValue: coupon.discountValue,
                 minOrderAmount: coupon.minOrderAmount || 0,
                 expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
-                isActive: coupon.isActive
+                isActive: coupon.isActive,
+                applicableCategory: coupon.applicableCategory || '',
+                applicableSubcategory: coupon.applicableSubcategory || ''
             });
         } else {
             resetForm();
@@ -189,6 +212,13 @@ export default function CouponsPage() {
                                         {new Date(coupon.expiryDate).toLocaleDateString()}
                                     </span>
                                 </div>
+                                {(coupon.applicableCategory) && (
+                                    <div className="text-[10px] bg-white/5 rounded px-2 py-1 mt-1 border border-white/10">
+                                        <span className="text-gray-400">Valid on: </span>
+                                        <span className="text-primary">{coupon.applicableCategory}</span>
+                                        {coupon.applicableSubcategory && <span className="text-gray-300"> ({coupon.applicableSubcategory})</span>}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -258,6 +288,36 @@ export default function CouponsPage() {
                                 value={formData.expiryDate}
                                 onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
                             />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Target Category (Optional)</label>
+                            <select
+                                className="w-full px-4 py-2 rounded-lg bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white transition-all"
+                                value={formData.applicableCategory}
+                                onChange={(e) => setFormData({ ...formData, applicableCategory: e.target.value, applicableSubcategory: '' })}
+                            >
+                                <option value="">All Categories</option>
+                                {categoriesData.map(cat => (
+                                    <option key={cat._id} value={cat.name}>{cat.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Subcategory (Optional)</label>
+                            <select
+                                className="w-full px-4 py-2 rounded-lg bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white transition-all"
+                                value={formData.applicableSubcategory}
+                                onChange={(e) => setFormData({ ...formData, applicableSubcategory: e.target.value })}
+                                disabled={!formData.applicableCategory}
+                            >
+                                <option value="">All Subcategories</option>
+                                {formData.applicableCategory && categoriesData.find(c => c.name === formData.applicableCategory)?.subcategories?.map((sub, idx) => (
+                                    <option key={idx} value={sub.slug}>{sub.name}</option>
+                                ))}
+                            </select>
                         </div>
                     </div>
 

@@ -10,7 +10,8 @@ import {
    Menu,
    X,
    Home,
-   Grid
+   Grid,
+   ChevronDown
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import api from '@/services/api';
@@ -20,6 +21,7 @@ import { useContent } from '@/hooks/useContent';
 export default function Navbar() {
    const [isSticky, setIsSticky] = useState(false);
    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+   const [expandedCategory, setExpandedCategory] = useState(null); // For mobile accordion
    const [categories, setCategories] = useState([]);
    const { cartCount, wishlistCount } = useCart();
 
@@ -148,7 +150,7 @@ export default function Navbar() {
             {/* NAVIGATION LINKS (Desktop Only) */}
             <div className="hidden md:block border-t border-white/5 bg-black/50 backdrop-blur-sm">
                <div className="container mx-auto px-4 max-w-7xl">
-                  <nav className="flex justify-center items-center gap-10 py-3 overflow-x-auto">
+                  <nav className="flex justify-center items-center gap-10 py-3">
                      <Link
                         href="/"
                         className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-primary relative group py-1"
@@ -157,14 +159,35 @@ export default function Navbar() {
                         <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full opacity-50"></span>
                      </Link>
                      {categories.map((cat) => (
-                        <Link
-                           key={cat._id}
-                           href={`/category/${cat.slug}`}
-                           className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-primary relative group py-1"
-                        >
-                           {cat.name}
-                           <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full opacity-50"></span>
-                        </Link>
+                        <div key={cat._id} className="relative group py-1">
+                           <Link
+                              href={`/category/${cat.slug}`}
+                              className="text-xs font-bold uppercase tracking-[0.2em] text-gray-400 hover:text-primary flex items-center gap-1"
+                           >
+                              {cat.name}
+                              {cat.subcategories && cat.subcategories.length > 0 && (
+                                 <ChevronDown size={14} className="opacity-70 group-hover:translate-y-0.5 transition-transform" />
+                              )}
+                              <span className="absolute bottom-0 left-0 w-0 h-[1px] bg-primary transition-all duration-300 group-hover:w-full opacity-50"></span>
+                           </Link>
+
+                           {/* Dropdown Menu */}
+                           {cat.subcategories && cat.subcategories.length > 0 && (
+                              <div className="absolute top-full left-0 mt-2 w-56 bg-neutral-900 border border-white/10 shadow-xl rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-left overflow-hidden z-[100]">
+                                 <div className="py-2">
+                                    {cat.subcategories.map((sub, idx) => (
+                                       <Link
+                                          key={idx}
+                                          href={`/category/${cat.slug}?subcategory=${sub.slug}`} // Pass subcategory as query param
+                                          className="block px-4 py-3 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition-colors border-b border-white/5 last:border-none"
+                                       >
+                                          {sub.name}
+                                       </Link>
+                                    ))}
+                                 </div>
+                              </div>
+                           )}
+                        </div>
                      ))}
                   </nav>
                </div>
@@ -193,14 +216,43 @@ export default function Navbar() {
                         </Link>
                      </li>
                      {categories.map((cat) => (
-                        <li key={cat._id}>
-                           <Link
-                              href={`/category/${cat.slug}`}
-                              className="flex items-center justify-between py-4 text-gray-300 font-medium tracking-wide border-b border-white/5 hover:text-primary transition-colors"
-                              onClick={() => setMobileMenuOpen(false)}
-                           >
-                              {cat.name}
-                           </Link>
+                        <li key={cat._id} className="border-b border-white/5">
+                           <div className="flex items-center justify-between py-4">
+                              <Link
+                                 href={`/category/${cat.slug}`}
+                                 className="text-gray-300 font-medium tracking-wide hover:text-primary transition-colors flex-1"
+                                 onClick={() => setMobileMenuOpen(false)}
+                              >
+                                 {cat.name}
+                              </Link>
+                              {cat.subcategories && cat.subcategories.length > 0 && (
+                                 <button
+                                    onClick={() => setExpandedCategory(expandedCategory === cat._id ? null : cat._id)}
+                                    className="p-2 text-gray-500 hover:text-white transition-colors"
+                                 >
+                                    <ChevronDown size={16} className={`transition-transform duration-300 ${expandedCategory === cat._id ? 'rotate-180' : ''}`} />
+                                 </button>
+                              )}
+                           </div>
+
+                           {/* Mobile Subcategories Accordion */}
+                           {cat.subcategories && cat.subcategories.length > 0 && (
+                              <div className={`overflow-hidden transition-all duration-300 ${expandedCategory === cat._id ? 'max-h-96 opacity-100 mb-4' : 'max-h-0 opacity-0'}`}>
+                                 <ul className="pl-4 space-y-2 border-l border-white/10 ml-2">
+                                    {cat.subcategories.map((sub, idx) => (
+                                       <li key={idx}>
+                                          <Link
+                                             href={`/category/${cat.slug}?subcategory=${sub.slug}`}
+                                             className="block text-sm text-gray-300 hover:text-primary transition-colors py-1"
+                                             onClick={() => setMobileMenuOpen(false)}
+                                          >
+                                             {sub.name}
+                                          </Link>
+                                       </li>
+                                    ))}
+                                 </ul>
+                              </div>
+                           )}
                         </li>
                      ))}
                      <li className="mt-8 pt-8 border-t border-white/10 space-y-4">

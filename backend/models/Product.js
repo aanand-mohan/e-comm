@@ -13,6 +13,10 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    subcategory: {
+        type: String,
+        // Optional, as not all products might have a subcategory initially
+    },
     images: [{
         type: String,
     }],

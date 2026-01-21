@@ -29,4 +29,14 @@ const getOrderById = async (req, res) => {
     }
 };
 
-export { getMyOrders, getOrderById };
+const getOrdersByUser = async (req, res) => {
+    try {
+        const orders = await OrderServiceImpl.getOrdersByUserId(req.params.id);
+        res.json(orders);
+    } catch (error) {
+        res.status(500);
+        throw new Error(error.message);
+    }
+};
+
+export { getMyOrders, getOrderById, getOrdersByUser };

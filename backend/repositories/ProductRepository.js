@@ -23,7 +23,7 @@ class ProductRepository {
     }
 
     // Improved findAll to match original controller's capabilities
-    async findWithQuery(keyword, category) {
+    async findWithQuery(keyword, category, subcategory) {
         const query = {};
 
         if (keyword) {
@@ -37,7 +37,11 @@ class ProductRepository {
             query.category = category;
         }
 
-        return await Product.find(query).limit(10); // Limit related products to 10 for performance
+        if (subcategory) {
+            query.subcategory = subcategory;
+        }
+
+        return await Product.find(query); // Removed limit(10) to show all products for now, or keep pagination if needed later. But user might want to see all.
     }
 
     async findById(id) {

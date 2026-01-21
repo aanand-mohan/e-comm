@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import api from '@/services/api';
-import { ShoppingCart, Heart, Truck, ShieldCheck, ArrowLeft, Plus, Minus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Heart, Truck, ShieldCheck, ArrowLeft, Plus, Minus, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,6 +24,45 @@ export default function ProductDetailsPage({ params }) {
     const [itemsPerView, setItemsPerView] = useState(4);
     const router = useRouter();
     const { success, error } = useToast();
+    const [activeCoupon, setActiveCoupon] = useState(null); // Best applicable coupon to show
+
+    // Fetch active coupons and check applicability
+    useEffect(() => {
+        if (!product) return;
+        const fetchCoupons = async () => {
+            try {
+                const { data } = await api.get('/api/coupons/active');
+                // Find best coupon for this product
+                const applicable = data.filter(c => {
+                    // 1. Check Category Match
+                    if (c.applicableCategory) {
+                        if (c.applicableCategory.toLowerCase() !== product.category?.toLowerCase()) return false;
+                        if (c.applicableSubcategory) {
+                            // Assuming product has subcategory field. If not, maybe skip strict check or assume match?
+                            // Let's assume strict if product has it.
+                            if (product.subcategory && c.applicableSubcategory.toLowerCase() !== product.subcategory.toLowerCase()) return false;
+                        }
+                    }
+                    // 2. Check Min Order Amount (vs Product Price)
+                    // Logic: "Buy this item and get discount". If item price < minOrder, maybe don't show?
+                    // Or show "Add more to use this coupon".
+                    // For simplicity, showing the coupon is good marketing even if unmatched yet. 
+                    // But user asked to "show as a discount code at the product".
+                    // Let's pick the one that GIVES the discount on THIS item.
+                    return true;
+                });
+
+                // Sort by value (best discount)
+                // Simplify: Just pick the first applicable one or highest value
+                if (applicable.length > 0) {
+                    setActiveCoupon(applicable[0]);
+                }
+            } catch (err) {
+                console.error('Failed to fetch coupons', err);
+            }
+        };
+        fetchCoupons();
+    }, [product]);
 
     // Update items per view based on screen size
     useEffect(() => {
@@ -335,7 +374,7 @@ export default function ProductDetailsPage({ params }) {
                                         className="flex-shrink-0 px-3 transition-all duration-500"
                                         style={{ width: `${100 / itemsPerView}%` }}
                                     >
-                                        <ProductCard product={p} />
+                                        <ProductCard product={p} activeCoupons={activeCoupons} />
                                     </div>
                                 ))}
                             </motion.div>
@@ -353,7 +392,7 @@ export default function ProductDetailsPage({ params }) {
                         </h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 opacity-80 hover:opacity-100 transition-opacity">
                             {recentlyViewed.map(p => (
-                                <ProductCard key={p._id} product={p} />
+                                <ProductCard key={p._id} product={p} activeCoupons={activeCoupons} />
                             ))}
                         </div>
                     </div>

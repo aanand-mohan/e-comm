@@ -42,6 +42,14 @@ const couponSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
     },
+    applicableCategory: {
+        type: String, // Slug or Name of the category
+        default: null
+    },
+    applicableSubcategory: {
+        type: String, // Slug of the subcategory
+        default: null
+    }
 }, {
     timestamps: true,
 });

@@ -12,7 +12,9 @@ const createCoupon = async (req, res) => {
             minOrderAmount,
             maxDiscountAmount,
             expiryDate,
-            usageLimit
+            usageLimit,
+            applicableCategory,
+            applicableSubcategory
         } = req.body;
 
         const couponExists = await Coupon.findOne({ code: code.toUpperCase() });
@@ -29,6 +31,8 @@ const createCoupon = async (req, res) => {
             maxDiscountAmount,
             expiryDate,
             usageLimit,
+            applicableCategory,
+            applicableSubcategory,
             createdBy: req.user._id,
         });
 
@@ -65,6 +69,11 @@ const updateCoupon = async (req, res) => {
             coupon.maxDiscountAmount = req.body.maxDiscountAmount || coupon.maxDiscountAmount;
             coupon.expiryDate = req.body.expiryDate || coupon.expiryDate;
             coupon.usageLimit = req.body.usageLimit || coupon.usageLimit;
+
+            // Update Category targeting (allow setting to null if explicitly sent as null/empty)
+            if (req.body.applicableCategory !== undefined) coupon.applicableCategory = req.body.applicableCategory;
+            if (req.body.applicableSubcategory !== undefined) coupon.applicableSubcategory = req.body.applicableSubcategory;
+
             // isActive is handled separately or can be updated here too if needed
             if (req.body.isActive !== undefined) {
                 coupon.isActive = req.body.isActive;
@@ -131,48 +140,99 @@ const applyCoupon = async (req, res) => {
             return res.status(400).json({ message: 'Coupon usage limit exceeded' });
         }
 
-        // 4. Check Min Order Amount
+        // 4. Check Min Order Amount (Based on Total Cart Value usually)
         if (cartTotal < coupon.minOrderAmount) {
             return res.status(400).json({
                 message: `Minimum order amount of ₹${coupon.minOrderAmount} required`
             });
         }
 
+        let eligibleAmount = 0;
+        let eligibleItemsCount = 0;
+
+        // Calculate Eligible Amount based on restrictions
+        const cartItems = req.body.cartItems || []; // Expect cartItems for targeted calculation
+
+        if (coupon.applicableCategory) {
+            if (!cartItems || cartItems.length === 0) {
+                // If checking blindly without items, we can't validate category. 
+                // But for a robust implementation, we assume if category is set, we strictly need items.
+                // However, to keep backward compat (if any), if no items sent but total sent, maybe fail or assume full? 
+                // Better to fail or return 0 discount if it's targeted but no items data.
+                if (cartTotal > 0) {
+                    return res.status(400).json({ message: 'Cart items required for category-specific coupon' });
+                }
+            }
+
+            // Filter items
+            cartItems.forEach(item => {
+                const product = item.product || {};
+                const prodCategory = product.category || '';
+                const prodSubcategory = product.subcategory || ''; // Assuming product has subcategory field populated or stored
+
+                // Check Category Match
+                // Use precise matching or includes for flexibility. 
+                // The prompt says "target any category or sub-category".
+                // Usually direct match.
+
+                let isMatch = false;
+
+                // Check Main Category
+                if (prodCategory.toLowerCase() === coupon.applicableCategory.toLowerCase()) {
+                    isMatch = true;
+                    // If Subcategory is ALSO specified, it must match that too (Narrowing down) 
+                    // OR does it mean Category OR Subcategory? Usually Hierarchy: Category AND (Subcategory if set).
+                    if (coupon.applicableSubcategory) {
+                        if (prodSubcategory.toLowerCase() !== coupon.applicableSubcategory.toLowerCase()) {
+                            isMatch = false;
+                        }
+                    }
+                }
+
+                if (isMatch) {
+                    eligibleAmount += (product.price * item.quantity);
+                    eligibleItemsCount += item.quantity;
+                }
+            });
+
+            if (eligibleAmount === 0) {
+                return res.status(400).json({
+                    message: `This coupon is only valid for ${coupon.applicableCategory} ${coupon.applicableSubcategory ? `(${coupon.applicableSubcategory})` : ''} items.`
+                });
+            }
+
+        } else {
+            // No category restriction -> Full cart is eligible
+            eligibleAmount = cartTotal;
+        }
+
+
         // Calculate Discount
         let discountAmount = 0;
         if (coupon.discountType === 'percentage') {
-            discountAmount = (cartTotal * coupon.discountValue) / 100;
+            discountAmount = (eligibleAmount * coupon.discountValue) / 100;
             // Apply Max Discount Cap if exists
             if (coupon.maxDiscountAmount && discountAmount > coupon.maxDiscountAmount) {
                 discountAmount = coupon.maxDiscountAmount;
             }
         } else if (coupon.discountType === 'flat') {
+            // Flat discount generally applies once per order, NOT per item.
+            // But if it's targeted? Usually "Get 500 off on Shoes". 
+            // If I buy only shoes worth 1000, I get 500 off. 
+            // If I buy Shoes (1000) and Hat (200), I still get 500 off (capped by eligible amount?).
+            // Let's assume Flat Discount applies to the Eligible Total, capped by Eligible Total.
             discountAmount = coupon.discountValue;
+            if (discountAmount > eligibleAmount) {
+                discountAmount = eligibleAmount;
+            }
         }
 
-        // Ensure discount doesn't exceed cart total
+        // Final safety check
         if (discountAmount > cartTotal) {
             discountAmount = cartTotal;
         }
 
         const finalAmount = cartTotal - discountAmount;
-
-        // Optionally increment usedCount here? 
-        // Usually done on Order Placement, but some do it on validation.
-        // The prompt says "Increase usedCount when coupon is successfully applied" but typically "applied" in context of "apply endpoint" means validation.
-        // However, strictly speaking, it should only increment when the order is PLACED.
-        // For this task, I will just return the calculations. The increment logic should be in the Order Creation flow effectively, 
-        // OR if the user intends this endpoint to lock the coupon.
-        // BUT, looking at the requirements: "Increase usedCount when coupon is successfully applied" is listed under logic for controller.
-        // It's safer to increment ONLY when Order is placed to avoid abuse.
-        // I will add a helper method or logic in Order Controller later to increment it.
-        // OR, if "apply" implies "attaching to cart", then we just validate.
-
-        // Wait, the prompt says "Increase usedCount when coupon is successfully applied" under controllers/couponController.js
-        // This might interpret `applyCoupon` as the final step? No, `apply` is usually "check validity".
-        // I will assume for now this endpoint is just calculation. 
-        // *Correction*: Actually, usually "Apply" button just calculates. "Checkout" confirms.
-        // I will NOT increment here to prevent usage count burning on just checking price.
 
         res.json({
             couponCode: coupon.code,
@@ -186,9 +246,25 @@ const applyCoupon = async (req, res) => {
     }
 };
 
+// @desc    Get active coupons (Public)
+// @route   GET /api/coupons/active
+// @access  Public
+const getActiveCoupons = async (req, res) => {
+    try {
+        const coupons = await Coupon.find({
+            isActive: true,
+            expiryDate: { $gte: new Date() }
+        }).select('-usedCount -createdBy -createdAt -updatedAt'); // Exclude internal fields
+        res.json(coupons);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 export {
     createCoupon,
     getCoupons,
+    getActiveCoupons,
     updateCoupon,
     disableCoupon,
     applyCoupon

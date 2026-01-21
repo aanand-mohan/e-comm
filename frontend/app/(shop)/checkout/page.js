@@ -26,21 +26,174 @@ export default function CheckoutPage() {
         paymentMethod: 'COD' // Default
     });
 
+    // Coupon State
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null); // { code, discountAmount }
+    const [couponMessage, setCouponMessage] = useState('');
+    const [applyingCoupon, setApplyingCoupon] = useState(false);
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode) return;
+        setApplyingCoupon(true);
+        setCouponMessage('');
+        try {
+            // Need to calculate subtotal first to send validation request
+            // Or better, send cartItems and let backend calculate eligibility and amount
+            const subTotal = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+
+            const { data } = await api.post('/api/coupons/apply', {
+                couponCode,
+                cartTotal: subTotal,
+                cartItems: cartItems // Send items for category validation
+            });
+
+            setAppliedCoupon({
+                code: data.couponCode,
+                discountAmount: data.discountAmount
+            });
+            setCouponMessage('Coupon applied successfully!');
+            // Update total with discount (Need to account for GST? Usually discount is on price)
+            // Let's assume Discount reduces the Taxable Value. 
+            // So New Subtotal = Subtotal - Discount. 
+            // New GST = (Subtotal - Discount) * 0.18
+            // Check logic below in rendering.
+
+        } catch (err) {
+            setCouponMessage(err.response?.data?.message || 'Invalid Coupon');
+            setAppliedCoupon(null);
+        } finally {
+            setApplyingCoupon(false);
+        }
+    };
+
+    // Auto-Apply Coupon Logic
+    useEffect(() => {
+        const autoApplyCoupon = async () => {
+            if (cartItems.length === 0 || appliedCoupon) return; // Don't override if already applied or empty
+
+            try {
+                const { data: coupons } = await api.get('/api/coupons/active');
+                if (!coupons || coupons.length === 0) return;
+
+                // Find best coupon
+                let bestCoupon = null;
+                let maxDiscount = 0;
+
+                const cartTotal = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+
+                // Helper to calc discount (simplified version of backend logic for client-side estimation)
+                const calculatePotentialDiscount = (coupon) => {
+                    // Check Min Order
+                    if (cartTotal < (coupon.minOrderAmount || 0)) return 0;
+
+                    let eligibleAmount = 0;
+
+                    if (coupon.applicableCategory) {
+                        let hasItem = false;
+                        cartItems.forEach(item => {
+                            let isMatch = false;
+                            if (item.product.category?.toLowerCase() === coupon.applicableCategory.toLowerCase()) {
+                                isMatch = true;
+                                if (coupon.applicableSubcategory && item.product.subcategory?.toLowerCase() !== coupon.applicableSubcategory.toLowerCase()) {
+                                    isMatch = false;
+                                }
+                            }
+                            if (isMatch) {
+                                eligibleAmount += (item.product.price * item.quantity);
+                                hasItem = true;
+                            }
+                        });
+                        if (!hasItem) return 0;
+                    } else {
+                        eligibleAmount = cartTotal;
+                    }
+
+                    if (eligibleAmount === 0) return 0;
+
+                    let discount = 0;
+                    if (coupon.discountType === 'percentage') {
+                        discount = (eligibleAmount * coupon.discountValue) / 100;
+                        if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) discount = coupon.maxDiscountAmount;
+                    } else {
+                        discount = coupon.discountValue;
+                        if (discount > eligibleAmount) discount = eligibleAmount;
+                    }
+                    return discount;
+                };
+
+                coupons.forEach(c => {
+                    const discount = calculatePotentialDiscount(c);
+                    if (discount > maxDiscount) {
+                        maxDiscount = discount;
+                        bestCoupon = c;
+                    }
+                });
+
+                if (bestCoupon && maxDiscount > 0) {
+                    setCouponCode(bestCoupon.code);
+                    // Automatically trigger apply
+                    // We can't call handleApplyCoupon directly easily inside useEffect due to dependencies loop risk or async nature.
+                    // Instead, we just set the code and let the user click OR we call the API directly here.
+                    // Better UX: Call API directly.
+
+                    const { data } = await api.post('/api/coupons/apply', {
+                        couponCode: bestCoupon.code,
+                        cartTotal: cartTotal,
+                        cartItems: cartItems
+                    });
+
+                    setAppliedCoupon({
+                        code: data.couponCode,
+                        discountAmount: data.discountAmount
+                    });
+                    setCouponMessage(`Best offer '${bestCoupon.code}' auto-applied!`);
+                }
+
+            } catch (err) {
+                console.error("Auto-apply failed", err);
+            }
+        };
+
+        // Delay slightly to ensure cart is ready? 
+        // cartItems dependency handles it.
+        if (cartItems.length > 0 && !appliedCoupon) {
+            autoApplyCoupon();
+        }
+    }, [cartItems]); // Run when cart loads. Warning: if cartItems change, it might re-apply. 
+    // Usually acceptable: if I add more items, maybe a better coupon applies?
+    // But if I manually removed a coupon, I don't want it re-applied.
+    // We need a 'userManuallyRemoved' flag?
+    // For now, simplicity: If appliedCoupon is null, try to apply.
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponCode('');
+        setCouponMessage('');
+        // To prevent auto-reapply immediately, we might need state.
+        // But the useEffect has [cartItems] dependency. Removing coupon doesn't change cartItems.
+        // So it WON'T re-run automatically just by removing coupon.
+        // It WILL re-run if I add an item. That's actually good feature.
+    };
+
+    // Recalculate Total when Cart or Coupon changes
+    useEffect(() => {
+        if (cartItems.length > 0) {
+            const subTotal = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+            const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+            const taxableAmount = Math.max(0, subTotal - discount);
+            const gst = taxableAmount * 0.18;
+            const grandTotal = Math.round(taxableAmount + gst);
+            setTotal(grandTotal);
+        }
+    }, [cartItems, appliedCoupon]);
+
     useEffect(() => {
         const fetchCart = async () => {
             try {
                 const { data } = await api.get('/api/cart');
                 const items = Array.isArray(data) ? data : (data.items || []);
                 setCartItems(items);
-
-                // Calculate Subtotal
-                const subTotal = items.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-
-                // Calculate GST (18%) and Grand Total
-                // Rounding to nearest integer as requested
-                const grandTotal = Math.round(subTotal + (subTotal * 0.18));
-
-                setTotal(grandTotal);
+                // Initial calc handled by the other useEffect
             } catch (error) {
                 console.error('Failed to fetch cart:', error);
                 router.push('/cart');
@@ -301,6 +454,41 @@ export default function CheckoutPage() {
                         <div className="bg-neutral-900 p-6 md:p-8 rounded-2xl shadow-2xl border border-white/10">
                             <h2 className="text-xl font-serif font-bold text-white mb-6 tracking-wide">Your Order</h2>
 
+                            {/* COUPON INPUT */}
+                            <div className="mb-6 relative">
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Coupon Code"
+                                        className="flex-1 bg-black border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none uppercase font-mono"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        disabled={appliedCoupon}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyCoupon}
+                                        disabled={!couponCode || applyingCoupon || appliedCoupon}
+                                        className="bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase disabled:opacity-50 transition-all border border-white/5"
+                                    >
+                                        {applyingCoupon ? '...' : appliedCoupon ? 'Applied' : 'Apply'}
+                                    </button>
+                                </div>
+                                {couponMessage && (
+                                    <p className={`text-xs mt-2 ${couponMessage.includes('success') ? 'text-green-400' : 'text-red-400'}`}>
+                                        {couponMessage}
+                                    </p>
+                                )}
+                                {appliedCoupon && (
+                                    <button
+                                        onClick={handleRemoveCoupon}
+                                        className="text-[10px] text-red-500 hover:text-red-400 mt-1 underline"
+                                    >
+                                        Remove Coupon
+                                    </button>
+                                )}
+                            </div>
+
                             <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                                 {cartItems.map((item) => (
                                     <div key={item._id} className="flex gap-4 items-start">
@@ -321,12 +509,21 @@ export default function CheckoutPage() {
                             <div className="border-t border-dashed border-white/10 pt-6 space-y-3">
                                 <div className="flex justify-between text-sm text-gray-400">
                                     <span>Subtotal</span>
-                                    {/* Reverse calculate subtotal from total or recalculate: Total = Sub * 1.18, so Sub = Total / 1.18 */}
-                                    <span className="font-medium text-gray-200">₹{Math.round(total / 1.18).toLocaleString('en-IN')}</span>
+                                    <span className="font-medium text-gray-200">
+                                        ₹{cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0).toLocaleString('en-IN')}
+                                    </span>
                                 </div>
+                                {appliedCoupon && (
+                                    <div className="flex justify-between text-sm text-green-400">
+                                        <span>Discount ({appliedCoupon.code})</span>
+                                        <span className="font-medium">-₹{appliedCoupon.discountAmount.toLocaleString('en-IN')}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between text-sm text-gray-400">
                                     <span>GST (18%)</span>
-                                    <span className="font-medium text-gray-200">₹{Math.round(total - (total / 1.18)).toLocaleString('en-IN')}</span>
+                                    <span className="font-medium text-gray-200">
+                                        ₹{Math.round(Math.max(0, (cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0) - (appliedCoupon?.discountAmount || 0))) * 0.18).toLocaleString('en-IN')}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between text-sm text-gray-400">
                                     <span>Shipping</span>

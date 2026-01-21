@@ -94,106 +94,112 @@ export default function EditProductPage({ params }) {
     if (loading) return <div className="p-6">Loading product...</div>;
 
     return (
-        <div className="p-6 max-w-2xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Edit Product</h1>
+        <div className="p-6 max-w-4xl mx-auto">
+            <h1 className="text-3xl font-serif font-bold text-white tracking-wide mb-8">Edit Product</h1>
 
-            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+            {error && <div className="bg-red-900/20 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6">{error}</div>}
 
-            <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md space-y-4">
+            <form onSubmit={handleSubmit} className="bg-neutral-900/50 backdrop-blur-sm p-8 rounded-2xl shadow-lg border border-white/5 space-y-6">
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Title</label>
                     <input
                         type="text"
                         name="title"
                         required
                         value={formData.title}
                         onChange={handleChange}
-                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all font-sans"
+                        placeholder="Product Name"
                     />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Price (₹)</label>
                         <input
                             type="number"
                             name="price"
                             required
                             value={formData.price}
                             onChange={handleChange}
-                            className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all font-sans"
+                            placeholder="0.00"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Stock</label>
                         <input
                             type="number"
                             name="stock"
                             required
                             value={formData.stock}
                             onChange={handleChange}
-                            className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all font-sans"
+                            placeholder="Available Quantity"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Category</label>
                     <input
                         type="text"
                         name="category"
                         required
-                        value={formData.category}
+                        value={formData.category} // Note: This should ideally be a select dropdown like Add Product
                         onChange={handleChange}
-                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all font-sans"
+                        placeholder="Category Name"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Description</label>
                     <textarea
                         name="description"
                         required
                         rows="4"
                         value={formData.description}
                         onChange={handleChange}
-                        className="w-full border border-gray-300 p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-3 rounded-xl bg-neutral-900 border border-white/10 focus:ring-1 focus:ring-primary focus:border-primary/50 outline-none text-white placeholder-gray-600 transition-all font-sans custom-scrollbar"
+                        placeholder="Product Description"
                     ></textarea>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Images (Replace Existing)</label>
-                    <div className="border-2 border-dashed border-gray-300 rounded p-4 text-center cursor-pointer hover:bg-gray-50 transition relative">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Images (Replace Existing)</label>
+                    <div className="border-2 border-dashed border-white/10 rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 hover:bg-neutral-900 transition-all relative group">
                         <input
                             type="file"
                             multiple
                             onChange={handleFileChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         />
-                        <div className="flex flex-col items-center justify-center text-gray-500">
-                            <Upload size={24} className="mb-2" />
-                            <span className="text-sm">Click to upload new images</span>
+                        <div className="flex flex-col items-center justify-center text-gray-500 group-hover:text-primary transition-colors">
+                            <Upload size={32} className="mb-3" />
+                            <span className="text-sm font-medium">Click to upload new images</span>
+                            <span className="text-xs text-gray-600 mt-1">Supports: JPG, PNG, WEBP</span>
                             {files.length > 0 && (
-                                <span className="mt-2 text-blue-600 font-medium">{files.length} file(s) selected</span>
+                                <span className="mt-3 text-white bg-primary/20 px-3 py-1 rounded-full text-xs font-bold border border-primary/20">{files.length} file(s) selected</span>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="flex gap-4">
-                    <button
-                        type="submit"
-                        disabled={updating}
-                        className="w-full bg-blue-600 text-white py-2 rounded font-medium hover:bg-blue-700 transition disabled:opacity-50"
-                    >
-                        {updating ? 'Updating...' : 'Update Product'}
-                    </button>
+                <div className="flex gap-4 pt-6 border-t border-white/5">
                     <button
                         type="button"
                         onClick={() => router.push('/admin/products')}
-                        className="w-full bg-gray-200 text-gray-800 py-2 rounded font-medium hover:bg-gray-300 transition"
+                        className="flex-1 py-3 rounded-xl font-bold bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all"
                     >
                         Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={updating}
+                        className="flex-1 py-3 rounded-xl font-bold bg-primary text-black hover:bg-white hover:text-black shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {updating ? 'Updating...' : 'Update Product'}
                     </button>
                 </div>
             </form>

@@ -16,14 +16,19 @@ export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(8);
+  const [activeCoupons, setActiveCoupons] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data } = await api.get('/api/products');
-        setProducts(data);
+        const [productsRes, couponsRes] = await Promise.all([
+          api.get('/api/products'),
+          api.get('/api/coupons/active')
+        ]);
+        setProducts(productsRes.data);
+        setActiveCoupons(couponsRes.data);
       } catch (error) {
-        console.error('Failed to fetch products:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
@@ -87,7 +92,7 @@ export default function Home() {
                   transition={{ delay: idx * 0.05, duration: 0.5 }}
                   viewport={{ once: true }}
                 >
-                  <ProductCard product={product} />
+                  <ProductCard product={product} activeCoupons={activeCoupons} />
                   {/* Note: ProductCard might need CSS adjustments for dark mode if it doesn't look right. 
                         Assuming ProductCard is mostly image and text that adapts or is white-bg based card. 
                         If it's white card, it will pop nicely on dark bg. */}

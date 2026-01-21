@@ -22,7 +22,13 @@ const categorySchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true,
-    }
+    },
+    subcategories: [{
+        name: { type: String, required: true },
+        slug: { type: String, required: true },
+        image: String,
+        isActive: { type: Boolean, default: true }
+    }]
 }, {
     timestamps: true,
 });

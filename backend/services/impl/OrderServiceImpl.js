@@ -77,6 +77,10 @@ class OrderServiceImpl {
             return { message: 'Order removed' };
         }
     }
+
+    async getOrdersByUserId(userId) {
+        return await OrderRepository.findByUser(userId);
+    }
 }
 
 export default new OrderServiceImpl();

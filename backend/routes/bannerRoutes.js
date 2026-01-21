@@ -1,4 +1,5 @@
 import express from 'express';
+import upload from '../config/multer.js';
 import {
     createBanner,
     getBanners,
@@ -12,16 +13,13 @@ const router = express.Router();
 
 router.route('/')
     .get(getBanners) // Public list (query param: position)
-    .post(protect, admin, (req, res, next) => {
-        console.log('POST /api/banners hit');
-        next();
-    }, createBanner);
+    .post(protect, admin, upload.single('image'), createBanner);
 
 router.route('/admin')
     .get(protect, admin, getAdminBanners);
 
 router.route('/:id')
-    .put(protect, admin, updateBanner)
+    .put(protect, admin, upload.single('image'), updateBanner)
     .delete(protect, admin, deleteBanner);
 
 export default router;

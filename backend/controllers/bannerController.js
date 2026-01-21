@@ -5,7 +5,12 @@ import Banner from '../models/Banner.js';
 // @access  Private/Admin
 const createBanner = async (req, res) => {
     try {
-        const { title, image, link, position, displayOrder } = req.body;
+        const { title, link, position, displayOrder } = req.body;
+        let image = req.body.image;
+
+        if (req.file) {
+            image = req.file.path;
+        }
 
         const banner = await Banner.create({
             title,
@@ -58,11 +63,17 @@ const updateBanner = async (req, res) => {
 
         if (banner) {
             banner.title = req.body.title || banner.title;
-            banner.image = req.body.image || banner.image;
             banner.link = req.body.link || banner.link;
             banner.position = req.body.position || banner.position;
             banner.displayOrder = req.body.displayOrder || banner.displayOrder;
             if (req.body.isActive !== undefined) banner.isActive = req.body.isActive;
+
+            if (req.file) {
+                banner.image = req.file.path;
+            } else if (req.body.image) {
+                // Allow updating image URL manually if needed, distinct from file upload
+                banner.image = req.body.image;
+            }
 
             const updatedBanner = await banner.save();
             res.json(updatedBanner);

@@ -6,7 +6,9 @@ class OrderRepository {
     }
 
     async findByUser(userId) {
-        return await Order.find({ user: userId }).sort({ createdAt: -1 });
+        return await Order.find({ user: userId })
+            .populate('products.productId', 'title price image')
+            .sort({ createdAt: -1 });
     }
 
     async create(orderData) {

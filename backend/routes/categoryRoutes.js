@@ -4,7 +4,8 @@ import {
     getCategories,
     getAdminCategories,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    addSubcategory
 } from '../controllers/categoryController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -20,5 +21,8 @@ router.route('/admin')
 router.route('/:id')
     .put(protect, admin, updateCategory)
     .delete(protect, admin, deleteCategory);
+
+router.route('/:id/subcategories')
+    .post(protect, admin, addSubcategory);
 
 export default router;

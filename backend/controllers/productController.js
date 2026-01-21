@@ -7,7 +7,8 @@ const getProducts = async (req, res) => {
     try {
         const keyword = req.query.keyword ? req.query.keyword : '';
         const category = req.query.category ? req.query.category : '';
-        const products = await ProductServiceImpl.getProducts(keyword, category);
+        const subcategory = req.query.subcategory ? req.query.subcategory : '';
+        const products = await ProductServiceImpl.getProducts(keyword, category, subcategory);
         res.json(products);
     } catch (error) {
         res.status(500); // Internal Server Error
