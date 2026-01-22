@@ -16,6 +16,8 @@ export default function CartPage() {
     const [total, setTotal] = useState(0);
     const { success, error, info } = useToast();
 
+    const [userManuallyRemoved, setUserManuallyRemoved] = useState(false);
+
     // Coupon State
     const [activeCoupons, setActiveCoupons] = useState([]);
     const [couponCode, setCouponCode] = useState('');
@@ -27,38 +29,105 @@ export default function CartPage() {
     useEffect(() => {
         const fetchCoupons = async () => {
             try {
-                // Fetch active coupons for display or recommendations
                 const { data } = await api.get('/api/coupons/active');
                 setActiveCoupons(data);
             } catch (err) {
                 console.error("Failed to fetch coupons", err);
             }
         };
-        // Only attempt if we think we might have access or if the route gets public access later.
-        // Actually, looking at routes/couponRoutes.js, GET / is admin only.
-        // So I will Comment this out or create a public route.
-        // The user didn't explicitly ask for a list, just "where show".
-        // Use a placeholder list or just rely on manual entry for now.
+        fetchCoupons();
     }, []);
 
-    const applyCoupon = async () => {
-        if (!couponCode) return;
+    // Calculate Best Coupon Helper
+    const getBestCoupon = () => {
+        if (!cartItems.length || !activeCoupons.length) return null;
+        let best = null;
+        let maxSavings = 0;
+
+        activeCoupons.forEach(coupon => {
+            // Check Min Order
+            if (coupon.minOrderAmount && total < coupon.minOrderAmount) return;
+
+            let savings = 0;
+            // 1. Category Specific
+            if (coupon.applicableCategory) {
+                const eligibleItems = cartItems.filter(item =>
+                    item.product?.category?.toLowerCase() === coupon.applicableCategory.toLowerCase() &&
+                    (!coupon.applicableSubcategory || item.product?.subcategory?.toLowerCase() === coupon.applicableSubcategory.toLowerCase())
+                );
+
+                if (eligibleItems.length === 0) return; // Not applicable
+
+                const eligibleTotal = eligibleItems.reduce((sum, item) => sum + ((item.product?.price || 0) * item.quantity), 0);
+
+                if (coupon.discountType === 'percentage') {
+                    savings = (eligibleTotal * coupon.discountValue) / 100;
+                    if (coupon.maxDiscountAmount) savings = Math.min(savings, coupon.maxDiscountAmount);
+                } else {
+                    // Flat discount implies it applies provided category items exist
+                    savings = coupon.discountValue;
+                }
+
+            } else {
+                // 2. Global Coupon
+                if (coupon.discountType === 'percentage') {
+                    savings = (total * coupon.discountValue) / 100;
+                    if (coupon.maxDiscountAmount) savings = Math.min(savings, coupon.maxDiscountAmount);
+                } else {
+                    savings = coupon.discountValue;
+                }
+            }
+
+            if (savings > maxSavings) {
+                maxSavings = savings;
+                best = { ...coupon, savings };
+            }
+        });
+        return best;
+    };
+
+    // Auto Apply Effect
+    useEffect(() => {
+        if (loading || cartItems.length === 0 || activeCoupons.length === 0) return;
+
+        // Only auto-apply if nothing is applied AND we haven't been "removed" by user
+        if (!appliedCoupon && !userManuallyRemoved) {
+            const best = getBestCoupon();
+            // Only apply if it offers actual savings
+            if (best && best.savings > 0) {
+                applyCoupon(best.code, true);
+            }
+        }
+    }, [cartItems, activeCoupons, total, loading, appliedCoupon, userManuallyRemoved]);
+
+    const applyCoupon = async (codeOverride = null, isAuto = false) => {
+        const code = typeof codeOverride === 'string' ? codeOverride : couponCode;
+        if (!code) return;
+
         setApplyingCoupon(true);
         try {
-            const cartTotal = total + (total * 0.18); // Including GST for calculation base? Or pre-tax?
-            // Usually discount is on Subtotal. Let's use Subtotal `total`.
-
+            // Usually discount is on Subtotal
             const { data } = await api.post('/api/coupons/apply', {
-                couponCode,
-                cartTotal: total
+                couponCode: code,
+                cartTotal: total,
+                cartItems
             });
 
             setDiscountAmount(data.discountAmount);
             setAppliedCoupon(data.couponCode);
-            success(`Coupon '${data.couponCode}' applied! Saved ₹${data.discountAmount}`);
+            setCouponCode(data.couponCode); // Sync input
+
+            if (isAuto) {
+                // Don't toast for auto-apply to avoid annoyance, or use a subtle 'info'
+                // success(`Best coupon '${data.couponCode}' auto-applied!`);
+            } else {
+                success(`Coupon '${data.couponCode}' applied! Saved ₹${data.discountAmount}`);
+                setUserManuallyRemoved(false); // Reset this so if they clear it later, it doesn't fight, but for now they manually applied it.
+            }
         } catch (err) {
             console.error(err);
-            error(err.response?.data?.message || 'Failed to apply coupon');
+            if (!isAuto) error(err.response?.data?.message || 'Failed to apply coupon');
+            // If auto-fail, just silent
             setDiscountAmount(0);
             setAppliedCoupon(null);
         } finally {
@@ -70,6 +139,7 @@ export default function CartPage() {
         setAppliedCoupon(null);
         setDiscountAmount(0);
         setCouponCode('');
+        setUserManuallyRemoved(true); // User explicitly removed it, don't auto-apply again this session
         info('Coupon removed');
     };
 
@@ -322,7 +392,7 @@ export default function CartPage() {
                                 </div>
                                 <div className="flex justify-between text-gray-400 text-sm">
                                     <span>GST (18%)</span>
-                                    <span className="font-medium text-white">₹{(total * 0.18).toLocaleString('en-IN')}</span>
+                                    <span className="font-medium text-white">₹{Math.round(Math.max(0, total - discountAmount) * 0.18).toLocaleString('en-IN')}</span>
                                 </div>
                                 <div className="flex justify-between text-gray-400 text-sm items-center">
                                     <span>Shipping</span>
@@ -340,9 +410,8 @@ export default function CartPage() {
                                             className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary uppercase font-mono text-sm"
                                             value={couponCode}
                                             onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                            disabled={appliedCoupon}
                                         />
-                                        {appliedCoupon ? (
+                                        {appliedCoupon && couponCode === appliedCoupon ? (
                                             <button
                                                 onClick={removeCoupon}
                                                 className="bg-red-900/20 text-red-400 px-4 rounded-lg font-bold border border-red-500/20 hover:bg-red-900/40 transition-colors"
@@ -351,14 +420,19 @@ export default function CartPage() {
                                             </button>
                                         ) : (
                                             <button
-                                                onClick={applyCoupon}
+                                                onClick={() => applyCoupon()}
                                                 disabled={!couponCode || applyingCoupon}
                                                 className="bg-white/10 text-white px-4 rounded-lg font-bold hover:bg-white/20 transition-colors disabled:opacity-50"
                                             >
-                                                {applyingCoupon ? '...' : 'Apply'}
+                                                {applyingCoupon ? '...' : (appliedCoupon ? 'Replace' : 'Apply')}
                                             </button>
                                         )}
                                     </div>
+                                    {appliedCoupon && !userManuallyRemoved && (
+                                        <div className="mt-2 text-xs text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded inline-block animate-pulse">
+                                            ✨ Best coupon auto-applied
+                                        </div>
+                                    )}
                                     {/* Available Coupons Hint */}
                                     {!appliedCoupon && (
                                         <div className="mt-3">
@@ -390,11 +464,11 @@ export default function CartPage() {
                                     <div className="text-right">
                                         {appliedCoupon && (
                                             <span className="block text-sm text-gray-400 line-through mb-1">
-                                                ₹{(total + (total * 0.18)).toLocaleString('en-IN')}
+                                                ₹{Math.round(total * 1.18).toLocaleString('en-IN')}
                                             </span>
                                         )}
                                         <span className="block text-2xl font-extrabold text-primary leading-none mb-1">
-                                            ₹{(total + (total * 0.18) - discountAmount).toLocaleString('en-IN')}
+                                            ₹{Math.round((Math.max(0, total - discountAmount) * 1.18)).toLocaleString('en-IN')}
                                         </span>
                                         <span className="text-[10px] text-gray-500 font-medium">Inclusive of all taxes</span>
                                     </div>

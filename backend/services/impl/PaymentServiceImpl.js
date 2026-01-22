@@ -26,53 +26,50 @@ class PaymentServiceImpl {
         }
     }
 
-    async createCheckoutSession(orderId, cartItems) {
-        if (!cartItems || cartItems.length === 0) {
-            throw new Error('No items in cart');
+    async createCheckoutSession(orderId, cartItems) { // cartItems is ignored, we use order source of truth
+        // 1. Fetch Order Source of Truth
+        const order = await OrderRepository.findById(orderId);
+        if (!order) {
+            throw new Error('Order not found');
         }
 
-        let subTotal = 0;
+        // 2. Prepare Single Line Item for Exact Amount Match
+        // We use a single line item to ensure the final amount (with coupons/taxes) is exactly what is charged.
+        // We will make the text descriptive so the user knows what they are paying for.
 
-        const line_items = cartItems.map((item) => {
-            const itemTotal = item.product.price * item.quantity;
-            subTotal += itemTotal;
+        const productNames = order.products.map(p => p.title).join(', ');
 
-            return {
-                price_data: {
-                    currency: 'inr',
-                    product_data: {
-                        name: item.product.title,
-                        images: item.product.images && item.product.images.length > 0 ? [item.product.images[0]] : [],
-                    },
-                    unit_amount: Math.round(item.product.price * 100),
-                },
-                quantity: item.quantity,
-            };
-        });
+        let lineItemName = `Payment for Order #${order._id.toString().slice(-6).toUpperCase()}`;
+        let lineItemDescription = `Included Tax & Discounts | Items: ${productNames}`;
 
-        // Add GST Line Item
-        const gstAmount = Math.round(subTotal * 0.18);
-        if (gstAmount > 0) {
-            line_items.push({
-                price_data: {
-                    currency: 'inr',
-                    product_data: {
-                        name: 'GST (18%)',
-                        description: 'Goods and Services Tax',
-                    },
-                    unit_amount: Math.round(gstAmount * 100), // GST in paisa
-                },
-                quantity: 1,
-            });
+        // If it's a single item, we can be more specific in the title
+        if (order.products.length === 1) {
+            lineItemName = order.products[0].title;
+            lineItemDescription = `Quantity: ${order.products[0].quantity} | Included Tax & Discounts`;
+        } else if (lineItemDescription.length > 500) {
+            // Truncate if too long
+            lineItemDescription = `Total Items: ${order.products.length} | Included Tax & Discounts`;
         }
+
+        const line_items = [{
+            price_data: {
+                currency: 'inr',
+                product_data: {
+                    name: lineItemName,
+                    description: lineItemDescription,
+                    images: order.products.length > 0 && order.products[0].image ? [order.products[0].image] : [],
+                },
+                unit_amount: Math.round(order.finalAmount * 100), // Convert to paise
+            },
+            quantity: 1,
+        }];
 
         let clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-
-        // Auto-fix: If we are on production (Render) but CLIENT_URL is still localhost, force the Vercel URL
         if (clientUrl.includes('localhost') && (process.env.NODE_ENV === 'production' || process.env.ON_RENDER === 'true')) {
             clientUrl = 'https://e-comm-2adg.vercel.app';
         }
 
+        // 3. Create Stripe Session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items,
@@ -80,7 +77,11 @@ class PaymentServiceImpl {
             success_url: `${clientUrl}/order-success/${orderId}?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${clientUrl}/cart`,
             metadata: {
-                orderId: orderId,
+                orderId: orderId.toString(),
+                basePrice: (order.totalAmount || 0).toString(),
+                discountAmount: (order.discountAmount || 0).toString(),
+                gstAmount: (order.taxAmount || 0).toString(),
+                couponCode: order.couponCode || 'NONE'
             },
         });
 

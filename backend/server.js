@@ -59,6 +59,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/content', contentRoutes);
 console.log('Routes registered: /api/banners');
+console.log('Force Restart: Payment Logic Updated');
 
 // Error Handling
 app.use(notFound);

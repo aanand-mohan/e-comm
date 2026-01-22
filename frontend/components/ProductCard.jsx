@@ -127,7 +127,20 @@ export default function ProductCard({ product, activeCoupons = [] }) {
                 </Link>
 
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                    <span className="text-xl font-bold text-primary">₹{product.price.toLocaleString('en-IN')}</span>
+                    <div className="flex flex-col items-start">
+                        {bestCoupon && bestCoupon.savings > 0 ? (
+                            <>
+                                <span className="text-xs text-gray-500 line-through decoration-red-500/50 decoration-1">
+                                    ₹{product.price?.toLocaleString('en-IN')}
+                                </span>
+                                <span className="text-xl font-bold text-primary">
+                                    ₹{(Math.max(0, (product.price || 0) - bestCoupon.savings)).toLocaleString('en-IN')}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-xl font-bold text-primary">₹{product.price?.toLocaleString('en-IN')}</span>
+                        )}
+                    </div>
 
                     {/* Minimal Add Button */}
                     <button

@@ -229,7 +229,10 @@ export default function CheckoutPage() {
             };
 
             // 1. Create Order
-            const { data: orderData } = await api.post('/api/checkout', payload);
+            const { data: orderData } = await api.post('/api/checkout', {
+                ...payload,
+                couponCode: appliedCoupon ? (appliedCoupon.code || appliedCoupon) : null
+            });
 
             // 2. Clear Cart
             refreshCounts();

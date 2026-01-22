@@ -24,45 +24,64 @@ export default function ProductDetailsPage({ params }) {
     const [itemsPerView, setItemsPerView] = useState(4);
     const router = useRouter();
     const { success, error } = useToast();
-    const [activeCoupon, setActiveCoupon] = useState(null); // Best applicable coupon to show
+    const [activeCoupons, setActiveCoupons] = useState([]);
 
-    // Fetch active coupons and check applicability
+    // Fetch active coupons
     useEffect(() => {
-        if (!product) return;
         const fetchCoupons = async () => {
             try {
                 const { data } = await api.get('/api/coupons/active');
-                // Find best coupon for this product
-                const applicable = data.filter(c => {
-                    // 1. Check Category Match
-                    if (c.applicableCategory) {
-                        if (c.applicableCategory.toLowerCase() !== product.category?.toLowerCase()) return false;
-                        if (c.applicableSubcategory) {
-                            // Assuming product has subcategory field. If not, maybe skip strict check or assume match?
-                            // Let's assume strict if product has it.
-                            if (product.subcategory && c.applicableSubcategory.toLowerCase() !== product.subcategory.toLowerCase()) return false;
-                        }
-                    }
-                    // 2. Check Min Order Amount (vs Product Price)
-                    // Logic: "Buy this item and get discount". If item price < minOrder, maybe don't show?
-                    // Or show "Add more to use this coupon".
-                    // For simplicity, showing the coupon is good marketing even if unmatched yet. 
-                    // But user asked to "show as a discount code at the product".
-                    // Let's pick the one that GIVES the discount on THIS item.
-                    return true;
-                });
-
-                // Sort by value (best discount)
-                // Simplify: Just pick the first applicable one or highest value
-                if (applicable.length > 0) {
-                    setActiveCoupon(applicable[0]);
-                }
+                setActiveCoupons(data);
             } catch (err) {
                 console.error('Failed to fetch coupons', err);
             }
         };
         fetchCoupons();
-    }, [product]);
+    }, []);
+
+    const bestCoupon = useMemo(() => {
+        if (!product || activeCoupons.length === 0) return null;
+
+        let best = null;
+        let maxDiscount = 0;
+
+        activeCoupons.forEach(coupon => {
+            // Check Category Match
+            let isMatch = false;
+            if (coupon.applicableCategory) {
+                if (product.category?.toLowerCase() === coupon.applicableCategory.toLowerCase()) {
+                    isMatch = true;
+                    if (coupon.applicableSubcategory) {
+                        if (product.subcategory?.toLowerCase() !== coupon.applicableSubcategory.toLowerCase()) {
+                            isMatch = false;
+                        }
+                    }
+                }
+            } else {
+                isMatch = true;
+            }
+
+            if (isMatch) {
+                // Calculate discount
+                let discount = 0;
+                if (coupon.discountType === 'percentage') {
+                    discount = ((product.price || 0) * coupon.discountValue) / 100;
+                    if (coupon.maxDiscountAmount && discount > coupon.maxDiscountAmount) {
+                        discount = coupon.maxDiscountAmount;
+                    }
+                } else {
+                    discount = coupon.discountValue;
+                }
+
+                if (discount > maxDiscount) {
+                    maxDiscount = discount;
+                    best = { ...coupon, savings: discount };
+                }
+            }
+        });
+
+        return best;
+    }, [product, activeCoupons]);
 
     // Update items per view based on screen size
     useEffect(() => {
@@ -250,8 +269,21 @@ export default function ProductDetailsPage({ params }) {
                                 {product.title}
                             </h1>
                             <p className="text-3xl font-light text-white flex items-center gap-3">
-                                ₹{product.price.toLocaleString()}
-                                <span className="text-sm text-gray-500 line-through">₹{(product.price * 1.2).toFixed(0)}</span>
+                                {bestCoupon ? (
+                                    <>
+                                        <span className="text-xl text-gray-500 line-through decoration-red-500/50 decoration-1">
+                                            ₹{product.price?.toLocaleString()}
+                                        </span>
+                                        <span className="text-3xl font-bold text-primary">
+                                            ₹{(product.price ? (product.price - bestCoupon.savings) : 0).toLocaleString()}
+                                        </span>
+                                        <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded border border-primary/20">
+                                            {bestCoupon.code} Applied
+                                        </span>
+                                    </>
+                                ) : (
+                                    <span>₹{product.price?.toLocaleString()}</span>
+                                )}
                             </p>
                         </div>
 
