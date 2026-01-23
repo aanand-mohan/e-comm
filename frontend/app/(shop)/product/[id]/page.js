@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import api from '@/services/api';
 import { ShoppingCart, Heart, Truck, ShieldCheck, ArrowLeft, Plus, Minus, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { motion } from 'framer-motion';
