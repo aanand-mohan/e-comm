@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post('/create-checkout-session', protect, createCheckoutSession);
 router.post('/verify', protect, verifyPayment);
-router.post('/webhook', handleWebhook);
+router.post('/webhook', express.raw({ type: 'application/json' }), handleWebhook);
 
 export default router;

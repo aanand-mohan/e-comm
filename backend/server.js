@@ -6,7 +6,7 @@ import userRoutes from './routes/userRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import cartRoutes from './routes/cartRoutes.js';
 import checkoutRoutes from './routes/checkoutRoutes.js';
-import orderRoutes from './routes/orderRoutes.js'; // [NEW]
+import orderRoutes from './routes/orderRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import adminOrderRoutes from './routes/adminOrderRoutes.js';
 import adminStatsRoutes from './routes/adminStatsRoutes.js';
@@ -31,15 +31,12 @@ app.use(cors());
 
 // Use JSON parser for all routes except webhook
 app.use((req, res, next) => {
-  if (req.originalUrl === '/api/payment/webhook') {
+  if (req.originalUrl.startsWith('/api/payment/webhook')) {
     next();
   } else {
     express.json({ limit: '50mb' })(req, res, next);
   }
 });
-
-// Use raw parser specifically for webhook
-app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
