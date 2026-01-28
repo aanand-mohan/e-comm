@@ -1,9 +1,10 @@
+import asyncHandler from 'express-async-handler';
 import ProductServiceImpl from '../services/impl/ProductServiceImpl.js';
 
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
-const getProducts = async (req, res) => {
+const getProducts = asyncHandler(async (req, res) => {
     try {
         const keyword = req.query.keyword ? req.query.keyword : '';
         const category = req.query.category ? req.query.category : '';
@@ -11,15 +12,15 @@ const getProducts = async (req, res) => {
         const products = await ProductServiceImpl.getProducts(keyword, category, subcategory);
         res.json(products);
     } catch (error) {
-        res.status(500); // Internal Server Error
+        res.status(500);
         throw new Error(error.message);
     }
-};
+});
 
 // @desc    Fetch single product
 // @route   GET /api/products/:id
 // @access  Public
-const getProductById = async (req, res) => {
+const getProductById = asyncHandler(async (req, res) => {
     try {
         const product = await ProductServiceImpl.getProductById(req.params.id);
         res.json(product);
@@ -27,12 +28,12 @@ const getProductById = async (req, res) => {
         res.status(404);
         throw new Error(error.message);
     }
-};
+});
 
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private/Admin
-const createProduct = async (req, res) => {
+const createProduct = asyncHandler(async (req, res) => {
     try {
         let productData = { ...req.body };
 
@@ -47,12 +48,12 @@ const createProduct = async (req, res) => {
         res.status(400);
         throw new Error(error.message);
     }
-};
+});
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
 // @access  Private/Admin
-const updateProduct = async (req, res) => {
+const updateProduct = asyncHandler(async (req, res) => {
     try {
         let productData = { ...req.body };
 
@@ -67,12 +68,12 @@ const updateProduct = async (req, res) => {
         res.status(404); // Or 400 depending on error
         throw new Error(error.message);
     }
-};
+});
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
 // @access  Private/Admin
-const deleteProduct = async (req, res) => {
+const deleteProduct = asyncHandler(async (req, res) => {
     try {
         const result = await ProductServiceImpl.deleteProduct(req.params.id);
         res.json(result);
@@ -80,7 +81,7 @@ const deleteProduct = async (req, res) => {
         res.status(404);
         throw new Error(error.message);
     }
-};
+});
 
 export {
     getProducts,

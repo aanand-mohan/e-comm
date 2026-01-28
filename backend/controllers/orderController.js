@@ -1,9 +1,10 @@
+import asyncHandler from 'express-async-handler';
 import OrderServiceImpl from '../services/impl/OrderServiceImpl.js';
 
 // @desc    Get logged in user orders
 // @route   GET /api/orders/myorders
 // @access  Private
-const getMyOrders = async (req, res) => {
+const getMyOrders = asyncHandler(async (req, res) => {
     try {
         const orders = await OrderServiceImpl.getMyOrders(req.user._id);
         res.json(orders);
@@ -11,12 +12,12 @@ const getMyOrders = async (req, res) => {
         res.status(500);
         throw new Error(error.message);
     }
-};
+});
 
 // @desc    Get order by ID
 // @route   GET /api/orders/:id
 // @access  Private
-const getOrderById = async (req, res) => {
+const getOrderById = asyncHandler(async (req, res) => {
     try {
         // We pass req.user to service to handle permission check logic
         const order = await OrderServiceImpl.getOrderById(req.params.id, req.user);
@@ -27,9 +28,9 @@ const getOrderById = async (req, res) => {
         res.status(statusCode);
         throw new Error(error.message);
     }
-};
+});
 
-const getOrdersByUser = async (req, res) => {
+const getOrdersByUser = asyncHandler(async (req, res) => {
     try {
         const orders = await OrderServiceImpl.getOrdersByUserId(req.params.id);
         res.json(orders);
@@ -37,6 +38,6 @@ const getOrdersByUser = async (req, res) => {
         res.status(500);
         throw new Error(error.message);
     }
-};
+});
 
 export { getMyOrders, getOrderById, getOrdersByUser };

@@ -123,7 +123,7 @@ class CheckoutServiceImpl {
             products: orderItems,
             shippingAddress,
             paymentMethod,
-            paymentStatus: paymentMethod === 'COD' ? 'Pending' : 'Paid',
+            paymentStatus: 'Pending',
             totalAmount: totalPrice, // Subtotal
             couponCode: couponCode,
             discountAmount: discountAmount,

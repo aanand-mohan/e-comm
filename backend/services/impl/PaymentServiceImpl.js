@@ -51,15 +51,20 @@ class PaymentServiceImpl {
             lineItemDescription = `Total Items: ${order.products.length} | Included Tax & Discounts`;
         }
 
+        const unitAmount = Math.round(order.finalAmount * 100);
+        if (unitAmount < 5000) {
+            throw new Error('Order total must be at least ₹50 for online payment. Please add more items.');
+        }
+
         const line_items = [{
             price_data: {
                 currency: 'inr',
                 product_data: {
                     name: lineItemName,
                     description: lineItemDescription,
-                    images: order.products.length > 0 && order.products[0].image ? [order.products[0].image] : [],
+                    images: order.products.length > 0 && order.products[0].image && order.products[0].image.startsWith('http') ? [order.products[0].image] : [],
                 },
-                unit_amount: Math.round(order.finalAmount * 100), // Convert to paise
+                unit_amount: unitAmount, // Convert to paise
             },
             quantity: 1,
         }];

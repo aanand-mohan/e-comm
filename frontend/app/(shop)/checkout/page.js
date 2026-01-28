@@ -252,7 +252,7 @@ export default function CheckoutPage() {
                     }
                 } catch (paymentError) {
                     console.error('Payment Session Creation Failed:', paymentError);
-                    alert('Order created but payment failed. Redirecting to order details...');
+                    alert(paymentError.response?.data?.message || 'Order created but payment failed. Redirecting to order details...');
                     router.push(`/order-success/${orderData._id}`);
                 }
             } else {
