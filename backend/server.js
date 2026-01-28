@@ -40,7 +40,10 @@ app.use((req, res, next) => {
 
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
-// ... (existing code)
+// Test Route to check if server is responsive
+app.get('/test', (req, res) => {
+  res.json({ message: 'API is running successfully' });
+});
 
 // Routes
 app.use('/api/users', userRoutes);

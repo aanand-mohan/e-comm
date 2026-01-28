@@ -5,15 +5,21 @@ import ProductServiceImpl from "../services/impl/ProductServiceImpl.js";
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
+    console.log("✅ GET /api/products API HIT");
+
     const keyword = req.query.keyword || "";
     const category = req.query.category || "";
     const subcategory = req.query.subcategory || "";
+
+    console.log("🔍 Filters:", { keyword, category, subcategory });
 
     const products = await ProductServiceImpl.getProducts(
         keyword,
         category,
         subcategory
     );
+
+    console.log("✅ Products fetched successfully:", products?.length);
 
     res.json(products);
 });
