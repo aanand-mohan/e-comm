@@ -1,92 +1,100 @@
-import asyncHandler from 'express-async-handler';
-import ProductServiceImpl from '../services/impl/ProductServiceImpl.js';
+import asyncHandler from "express-async-handler";
+import ProductServiceImpl from "../services/impl/ProductServiceImpl.js";
 
 // @desc    Fetch all products
 // @route   GET /api/products
 // @access  Public
 const getProducts = asyncHandler(async (req, res) => {
-    try {
-        const keyword = req.query.keyword ? req.query.keyword : '';
-        const category = req.query.category ? req.query.category : '';
-        const subcategory = req.query.subcategory ? req.query.subcategory : '';
-        const products = await ProductServiceImpl.getProducts(keyword, category, subcategory);
-        res.json(products);
-    } catch (error) {
-        res.status(500);
-        throw new Error(error.message);
-    }
+  console.log("✅ GET /api/products API HIT");
+
+  const keyword = req.query.keyword || "";
+  const category = req.query.category || "";
+  const subcategory = req.query.subcategory || "";
+
+  console.log("🔍 Filters:", { keyword, category, subcategory });
+
+  console.log("⏳ Calling ProductServiceImpl.getProducts...");
+
+  const products = await ProductServiceImpl.getProducts(
+    keyword,
+    category,
+    subcategory
+  );
+
+  console.log("✅ Products fetched successfully:", products.length);
+
+  res.status(200).json(products);
 });
 
 // @desc    Fetch single product
 // @route   GET /api/products/:id
 // @access  Public
 const getProductById = asyncHandler(async (req, res) => {
-    try {
-        const product = await ProductServiceImpl.getProductById(req.params.id);
-        res.json(product);
-    } catch (error) {
-        res.status(404);
-        throw new Error(error.message);
-    }
+  console.log("✅ GET /api/products/:id HIT");
+
+  const product = await ProductServiceImpl.getProductById(req.params.id);
+
+  if (!product) {
+    res.status(404);
+    throw new Error("Product not found");
+  }
+
+  res.json(product);
 });
 
 // @desc    Create a product
 // @route   POST /api/products
 // @access  Private/Admin
 const createProduct = asyncHandler(async (req, res) => {
-    try {
-        let productData = { ...req.body };
+  console.log("✅ POST /api/products HIT");
 
-        // Handle uploaded images
-        if (req.files && req.files.length > 0) {
-            productData.images = req.files.map(file => file.path); // Cloudinary returns 'path' as the secure URL
-        }
+  let productData = { ...req.body };
 
-        const product = await ProductServiceImpl.createProduct(productData);
-        res.status(201).json(product);
-    } catch (error) {
-        res.status(400);
-        throw new Error(error.message);
-    }
+  // Handle uploaded images
+  if (req.files && req.files.length > 0) {
+    productData.images = req.files.map((file) => file.path);
+  }
+
+  const product = await ProductServiceImpl.createProduct(productData);
+
+  res.status(201).json(product);
 });
 
 // @desc    Update a product
 // @route   PUT /api/products/:id
 // @access  Private/Admin
 const updateProduct = asyncHandler(async (req, res) => {
-    try {
-        let productData = { ...req.body };
+  console.log("✅ PUT /api/products/:id HIT");
 
-        // Handle uploaded images (append or replace? usually replace or special logic, here we just check if new files exist)
-        if (req.files && req.files.length > 0) {
-            productData.images = req.files.map(file => file.path);
-        }
+  let productData = { ...req.body };
 
-        const product = await ProductServiceImpl.updateProduct(req.params.id, productData);
-        res.json(product);
-    } catch (error) {
-        res.status(404); // Or 400 depending on error
-        throw new Error(error.message);
-    }
+  if (req.files && req.files.length > 0) {
+    productData.images = req.files.map((file) => file.path);
+  }
+
+  const product = await ProductServiceImpl.updateProduct(
+    req.params.id,
+    productData
+  );
+
+  res.json(product);
 });
 
 // @desc    Delete a product
 // @route   DELETE /api/products/:id
 // @access  Private/Admin
 const deleteProduct = asyncHandler(async (req, res) => {
-    try {
-        const result = await ProductServiceImpl.deleteProduct(req.params.id);
-        res.json(result);
-    } catch (error) {
-        res.status(404);
-        throw new Error(error.message);
-    }
+  console.log("✅ DELETE /api/products/:id HIT");
+
+  const result = await ProductServiceImpl.deleteProduct(req.params.id);
+
+  res.json(result);
 });
 
 export {
-    getProducts,
-    getProductById,
-    createProduct,
-    updateProduct,
-    deleteProduct,
+  getProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
 };
