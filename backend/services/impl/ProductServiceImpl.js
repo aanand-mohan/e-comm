@@ -1,37 +1,33 @@
 import ProductRepository from '../../repositories/ProductRepository.js';
 
 class ProductServiceImpl {
-    async getProducts(keyword, category, subcategory) {
+
+    static async getProducts(keyword, category, subcategory) {
         return await ProductRepository.findWithQuery(keyword, category, subcategory);
     }
 
-    async getProductById(id) {
+    static async getProductById(id) {
         const product = await ProductRepository.findById(id);
-        if (!product) {
-            throw new Error('Product not found');
-        }
+        if (!product) throw new Error("Product not found");
         return product;
     }
 
-    async createProduct(productData) {
+    static async createProduct(productData) {
         return await ProductRepository.create(productData);
     }
 
-    async updateProduct(id, productData) {
-        const updatedProduct = await ProductRepository.update(id, productData);
-        if (!updatedProduct) {
-            throw new Error('Product not found');
-        }
-        return updatedProduct;
+    static async updateProduct(id, productData) {
+        const updated = await ProductRepository.update(id, productData);
+        if (!updated) throw new Error("Product not found");
+        return updated;
     }
 
-    async deleteProduct(id) {
+    static async deleteProduct(id) {
         const success = await ProductRepository.delete(id);
-        if (!success) {
-            throw new Error('Product not found');
-        }
-        return { message: 'Product removed' };
+        if (!success) throw new Error("Product not found");
+        return { message: "Product removed" };
     }
 }
 
-export default new ProductServiceImpl();
+export default ProductServiceImpl;
+
