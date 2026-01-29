@@ -25,10 +25,12 @@ export default function AddProductPage() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const { data } = await api.get('/api/categories/admin');
+                // Use public endpoint for better reliability
+                const { data } = await api.get('/api/categories');
                 setCategories(data);
             } catch (err) {
-                console.error('Failed to fetch categories');
+                console.error('Failed to fetch categories:', err);
+                setError('Failed to load categories. Please check your connection.');
             }
         };
         fetchCategories();
