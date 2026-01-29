@@ -32,18 +32,20 @@ const allowedOrigins = [
   "https://e-comm-2adg.vercel.app"
 ];
 
+// Simplify CORS config
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: allowedOrigins,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser/proxy support
 };
+
+// Request Logger for Debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} | Origin: ${req.headers.origin}`);
+  next();
+});
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
