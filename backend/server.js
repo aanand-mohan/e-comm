@@ -27,17 +27,26 @@ connectDB().then(() => {
 
 const app = express();
 
-// Simplified CORS for troubleshooting
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://e-comm-2adg.vercel.app"
+];
+
 const corsOptions = {
-  origin: '*', // Allow all origins (public API)
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: false, // Explicitly disable credentials for wildcard support
-  optionsSuccessStatus: 200
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 // Use JSON parser for all routes except webhook
 app.use((req, res, next) => {
