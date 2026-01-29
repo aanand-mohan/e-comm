@@ -46,7 +46,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("(.*)", cors(corsOptions));
 
 // Use JSON parser for all routes except webhook
 app.use((req, res, next) => {
