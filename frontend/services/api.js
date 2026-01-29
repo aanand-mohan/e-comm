@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL:  'https://e-comm-8ozk.onrender.com'
+    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 });
 
 // Request interceptor to add auth token
