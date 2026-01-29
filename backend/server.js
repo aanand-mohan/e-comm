@@ -27,33 +27,17 @@ connectDB().then(() => {
 
 const app = express();
 
-const allowedOrigins = [
-  'https://e-comm-2adg.vercel.app',
-  'http://localhost:3000',
-  'http://localhost:5000',
-  'https://ecommapi.ddns.net'
-];
-
+// Simplified CORS for troubleshooting
 const corsOptions = {
-  origin: (origin, callback) => {
-    console.log('CORS Origin Check:', origin); // Debug log for EC2
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
-      callback(null, true);
-    } else {
-      console.log('CORS Blocked:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: '*', // Allow all origins (public API)
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: true,
+  credentials: false, // Explicitly disable credentials for wildcard support
   optionsSuccessStatus: 200
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+app.options('*', cors(corsOptions));
 
 // Use JSON parser for all routes except webhook
 app.use((req, res, next) => {
