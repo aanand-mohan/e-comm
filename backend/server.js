@@ -32,23 +32,33 @@ const allowedOrigins = [
   "https://e-comm-2adg.vercel.app"
 ];
 
-// Simplify CORS config
-const corsOptions = {
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-  optionsSuccessStatus: 200 // For legacy browser/proxy support
-};
+// Robust Manual CORS Middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
 
-// Request Logger for Debugging
+  // Allow requests from allowed origins
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  // Allow standard methods and headers
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  next();
+});
+
+// Request Logger
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} | Origin: ${req.headers.origin}`);
   next();
 });
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 // Use JSON parser for all routes except webhook
 app.use((req, res, next) => {
